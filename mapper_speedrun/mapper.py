@@ -25,13 +25,13 @@ class Mapper(Node):
 
         self.get_logger().info(f"Mapper node started in {os.getcwd()}")
 
-        self.create_timer(1.0, self.tf_callback)
+        # self.create_timer(1.0, self.tf_callback)
         
         self.intrinsic = None
-        self.extrinsic = None
+        self.extrinsic = np.eye(4)
 
         # create the parameters
-        self.declare_parameter('model_path', '/ros2_ws/src/mapper_speedrun/model/damo_yolo.onnx')
+        self.declare_parameter('model_path', 'src/mapper_speedrun/model/damo_yolo.onnx')
         self.declare_parameter('rgb_topic', '/zed/image_raw')
         self.declare_parameter('depth_topic', '/zed/depth/image_raw')
         self.declare_parameter('info_topic', '/zed/depth/camera_info')
@@ -59,8 +59,10 @@ class Mapper(Node):
         self.reconstruction = None
 
         # create the tf listener (camera_link to base_link)
+        """
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        """
 
         # create the color subscriber
         rgb_topic = self.get_parameter('rgb_topic').get_parameter_value().string_value
@@ -95,6 +97,7 @@ class Mapper(Node):
         self.inference_thread = Thread(target=self.inference_task).start()
 
     def tf_callback(self):
+        """
         # lookup the transform from camera_link to base_link
         base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
         camera_frame = self.get_parameter('camera_frame').get_parameter_value().string_value
@@ -126,6 +129,7 @@ class Mapper(Node):
                 self.get_logger().warning("Received tf without known intrinsic parameters!")
         else:
             self.camera.extrinsic = self.extrinsic
+        """
 
 
     def color_callback(self, msg: Image):
@@ -173,9 +177,9 @@ class Mapper(Node):
             # detect cones using the detector
             cones: List[bbox_t] = self.detector.predict(last_color_img)
 
-            if len(cones) == 0:
-                self.worker_busy = False
-                continue
+            # if len(cones) == 0:
+                # self.worker_busy = False
+                # continue
 
             # reconstruct the cones
             cone_array = ConeArray()

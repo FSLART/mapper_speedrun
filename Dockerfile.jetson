@@ -2,15 +2,15 @@ FROM nvidia/cuda:11.4.3-cudnn8-devel-ubuntu20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && apt install git curl wget libssl-dev libeigen3-dev libcgal-dev -y
+RUN apt update && apt install git curl wget libssl-dev -y
 
 # install TensorRT
-WORKDIR /tmp
-RUN wget https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/secure/8.5.3/local_repos/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb
-RUN dpkg -i /tmp/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb
-RUN cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8/*.gpg /usr/share/keyrings/
-RUN apt update
-RUN apt install tensorrt -y
+#WORKDIR /tmp
+#RUN wget https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/secure/8.5.3/local_repos/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb
+#RUN dpkg -i ./nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb
+#RUN cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8/*.gpg /usr/share/keyrings/
+#RUN apt update
+#RUN apt install tensorrt -y
 
 # enable ubuntu universe repository
 RUN apt update
@@ -44,21 +44,23 @@ RUN apt-get update && apt-get install -y \
     ros-foxy-tf2-ros \
     ros-foxy-sensor-msgs \
     ros-foxy-geometry-msgs \
-    ros-foxy-foxglove-bridge \
+    ros-foxy-rosbridge-server \
     git \
     libgl1 \
     gdb
 
 # install onnx runtime
 # from this link: https://elinux.org/Jetson_Zoo#ONNX_Runtime. verify the python version
-RUN wget https://nvidia.box.com/shared/static/48dtuob7meiw6ebgfsfqakc9vse62sg4.whl -O onnxruntime_gpu-1.18.0-cp310-cp310-linux_aarch64.whl
-RUN pip3 install onnxruntime_gpu-1.18.0-cp310-cp310-linux_aarch64.whl
+RUN wget https://nvidia.box.com/shared/static/3fechcaiwbtblznlchl6dh8uuat3dp5r.whl -O onnxruntime_gpu-1.18.0-cp38-cp38-linux_aarch64.whl
+RUN pip3 install onnxruntime_gpu-1.18.0-cp38-cp38-linux_aarch64.whl
 
 # install dependencies for the package
 RUN pip install \
-    numpy==1.26.4 \
+    numpy==1.24.4 \
     opencv-python \
-    scipy
+    scipy==1.10.1
+    
+RUN apt install libstdc++ -y
 
 # create a directory for the workspace
 RUN mkdir -p /ros2_ws/src
@@ -86,6 +88,8 @@ WORKDIR /ros2_ws
 # build the workspace
 RUN /bin/bash -c "source /opt/ros/foxy/setup.bash && \
     colcon build --symlink-install --parallel-workers 4"
+   
 
 # start the node
 CMD ["/bin/bash", "-c", "source /opt/ros/foxy/setup.bash && source /ros2_ws/install/setup.bash && ros2 launch /ros2_ws/src/mapper_speedrun/launch/mapper_launch.py"]
+

@@ -13,7 +13,7 @@ class c_bbox_t(ctypes.Structure):
                 ("class_id", ctypes.c_uint8)]
     
 # import the shared library
-core = ctypes.CDLL("/ros2_ws/src/mapper_speedrun/mapper_speedrun/nms_core/build/libnms.so")
+core = ctypes.CDLL("/usr/lib/libnms.so")
 
 # set the argument types
 core.nms.argtypes = [

@@ -27,7 +27,7 @@ class ConeDetector:
         ]
         """
         ort.set_default_logger_severity(3)
-        self.providers = ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'] # TODO: in Jetson, add TensorrtExecutionProvider
+        self.providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] # TODO: in Jetson, add TensorrtExecutionProvider
         self.model: InferenceSession = InferenceSession(model_path, providers=self.providers)
         print(f"Model running on {self.model.get_providers()}")
 
@@ -60,6 +60,7 @@ class ConeDetector:
 
     def predict(self, image) -> List[bbox_t]:
 
+        prep_start = time.time()
         # convert image from bgr to rgb
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -75,13 +76,15 @@ class ConeDetector:
         # add the batch size channel
         img_tensor = img_tensor[None]
         img_tensor = img_tensor.astype(np.float32)
+        prep_end = time.time()
+        print(f"Pre-proc. time: {prep_end - prep_start}s {1.0 / (prep_end - prep_start)} Hz")
 
         # run inference
         try:
             inference_start = time.time()
             output = self.model.run(None, {'images': img_tensor})
             inference_end = time.time()
-            print(f"Inference time: {inference_end - inference_start}s")
+            print(f"Inference time: {inference_end - inference_start}s {1.0 / (inference_end - inference_start)} Hz")
         except Exception as e:
             print(f"Inference failed: {e}")
 
@@ -93,7 +96,7 @@ class ConeDetector:
         nms_start = time.time()
         bboxes = nms_iou(boxes, probs, boxes.shape[1], probs.shape[2], self.iou_thres, self.confidence_thres)
         nms_end = time.time()
-        print(f"NMS time: {nms_end-nms_start}s")
+        print(f"NMS time: {nms_end-nms_start}s {1 / (nms_end - nms_start)} Hz")
 
         # convert the bboxes to the original size and remove the ones outside
         bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]
