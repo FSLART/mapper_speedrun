@@ -6,16 +6,25 @@ RUN apt-get update && apt-get install -y \
     python3-colcon-common-extensions \
     python3-vcstool \
     python3-rosdep \
-    python3-pip
+    python3-pip \
+    git
 
 # install dependencies for the package
 RUN pip3 install \
-    onnxruntime \
+    onnxruntime-gpu \
     numpy \
     opencv-python
 
 # create a directory for the workspace
 RUN mkdir -p /ros2_ws/src
+
+# install lart_msgs
+WORKDIR  /ros2_ws/src
+RUN git clone -b dev https://github.com/FSLART/lart_msgs.git
+
+# build lart_msgs
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+    colcon build --symlink-install --parallel-workers 4 --packages-select lart_msgs"
 
 # copy the package to the workspace
 COPY . /ros2_ws/src
