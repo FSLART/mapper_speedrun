@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y \
     python3-vcstool \
     python3-rosdep \
     python3-pip \
+    ros-humble-tf2-ros \
+    ros-humble-sensor-msgs \
+    ros-humble-geometry-msgs \
     git
 
 # install dependencies for the package
