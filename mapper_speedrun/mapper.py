@@ -20,10 +20,18 @@ class Mapper(Node):
         self.intrinsic = None
         self.extrinsic = None
 
-        # TODO: create the parameters
+        # create the parameters
+        self.declare_parameter('model_path', 'damo_yolo.onnx')
+        self.declare_parameter('rgb_topic', '/color')
+        self.declare_parameter('depth_topic', '/depth')
+        self.declare_parameter('info_topic', '/camera_info')
+        self.declare_parameter('cones_topic', '/cones')
+        self.declare_parameter('base_frame', 'base_link')
+        self.declare_parameter('camera_frame', 'camera_link')
 
         # create the cone detector
-        self.detector = ConeDetector(model_path='damo_yolo.onnx')
+        model_path = self.get_parameter('model_path').get_parameter_value().string_value
+        self.detector = ConeDetector(model_path=model_path)
 
         # the camera will only be created when the camera_info topic is received and the transform
         self.camera = None
@@ -36,20 +44,26 @@ class Mapper(Node):
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
         # create the color subscriber
-        self.color_sub = self.create_subscription(Image, '/color', self.color_callback, 10)
+        rgb_topic = self.get_parameter('rgb_topic').get_parameter_value().string_value
+        self.color_sub = self.create_subscription(Image, rgb_topic, self.color_callback, 10)
 
         # create the depth subscriber
-        self.depth_sub = self.create_subscription(Image, '/depth', self.depth_callback, 10)
+        depth_topic = self.get_parameter('depth_topic').get_parameter_value().string_value
+        self.depth_sub = self.create_subscription(Image, depth_topic, self.depth_callback, 10)
 
         # create the camera info subscriber
-        self.camera_info_sub = self.create_subscription(CameraInfo, '/camera_info', self.camera_info_callback, 10)
+        info_topic = self.get_parameter('info_topic').get_parameter_value().string_value
+        self.camera_info_sub = self.create_subscription(CameraInfo, info_topic, self.camera_info_callback, 10)
 
         # create the cone publisher
-        self.cone_pub = self.create_publisher(ConeArray, '/cones', 10)
+        cones_topic = self.get_parameter('cones_topic').get_parameter_value().string_value
+        self.cone_pub = self.create_publisher(ConeArray, cones_topic, 10)
 
     def tf_callback(self):
         # lookup the transform from camera_link to base_link
-        trans = self.tf_buffer.lookup_transform('base_link', 'camera_link', rclpy.time.Time())
+        base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
+        camera_frame = self.get_parameter('camera_frame').get_parameter_value().string_value
+        trans = self.tf_buffer.lookup_transform(base_frame, camera_frame, rclpy.time.Time())
         # get the extrinsic parameters
         translation = trans.transform.translation
         rotation = trans.transform.rotation
