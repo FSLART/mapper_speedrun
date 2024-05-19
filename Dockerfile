@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install \
     onnxruntime-gpu \
     numpy \
-    opencv-python
+    opencv-python \
+    scipy
 
 # create a directory for the workspace
 RUN mkdir -p /ros2_ws/src

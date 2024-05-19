@@ -1,10 +1,10 @@
 import rclpy
 from rclpy.node import Node
 import tf2_ros
-from tf2_ros import transformations
 from sensor_msgs.msg import Image, CameraInfo
 import numpy as np
 from geometry_msgs.msg import TransformStamped
+from scipy.spatial.transform import Rotation as R
 from lart_msgs.msg import Cone, ConeArray
 from .camera import Camera
 from .cone_detector import ConeDetector
@@ -67,12 +67,9 @@ class Mapper(Node):
         # get the extrinsic parameters
         translation = trans.transform.translation
         rotation = trans.transform.rotation
-        # convert to a 4x4 matrix
-        matrix = transformations.quaternion_matrix([rotation.x, rotation.y, rotation.z, rotation.w])
-        matrix[0][3] = translation.x
-        matrix[1][3] = translation.y
-        matrix[2][3] = translation.z
-        self.extrinsic = matrix
+        extrinsic = R.from_quat(rotation) # convert quaternion to transform matrix
+        extrinsic = np.append(extrinsic, translation, axis=0) # append the translation
+
         # verify if the camera is already instantiated
         if self.camera is None and self.intrinsic is not None:
             self.camera = Camera(self.intrinsic, self.extrinsic)
