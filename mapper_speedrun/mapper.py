@@ -1,9 +1,11 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, CameraInfo
+import numpy as np
 from geometry_msgs.msg import TransformStamped
 from .camera import Camera
 from .cone_detector import ConeDetector
+from .reconstruction import Reconstruction
 
 class Mapper(Node):
     def __init__(self):
@@ -53,8 +55,13 @@ class Mapper(Node):
         pass
 
     def camera_info_callback(self, msg: CameraInfo):
-        # TODO
-        pass        
+        # assign the intrinsic parameters
+        self.intrinsic = msg.K
+        self.intrinsic = np.reshape(self.intrinsic, (3, 3))
+        # instantiate the camera and reconstruction
+        if self.camera is None and self.extrinsic is not None:
+            self.camera = Camera(self.intrinsic, self.extrinsic)
+            self.reconstruction = Reconstruction(self.camera)
 
 
     def timer_callback(self):
