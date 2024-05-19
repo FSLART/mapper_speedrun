@@ -25,3 +25,24 @@ class Camera:
         # set the intrinsic and extrinsic parameters
         self.intrinsic = intrinsic
         self.extrinsic = extrinsic
+
+        self.last_color = None
+        self.last_depth = None
+
+    def capture_color(self, img: np.ndarray):
+        """
+        Capture the color image.
+
+        Args:
+            img (np.ndarray): The color image captured by the camera.
+        """
+        self.last_color = img
+
+    def capture_depth(self, img: np.ndarray):
+        """
+        Capture the depth image.
+
+        Args:
+            img (np.ndarray): The depth image captured by the camera.
+        """
+        self.last_depth = img        
