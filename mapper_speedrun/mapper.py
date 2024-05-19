@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import TransformStamped
 from .camera import Camera
 from .cone_detector import ConeDetector
 
@@ -8,6 +9,9 @@ class Mapper(Node):
     def __init__(self):
         super().__init__('mapper')
         self.create_timer(1.0, self.timer_callback)
+        
+        self.intrinsic = None
+        self.extrinsic = None
 
         # TODO: create the parameters
 
@@ -19,6 +23,9 @@ class Mapper(Node):
         # the reconstruction will only be created after the camera is created
         self.reconstruction = None
 
+        # create the tf subscriber (camera_link to base_link)
+        self.tf_sub = self.create_subscription(TransformStamped, '/tf', self.tf_callback, 10)
+
         # create the color subscriber
         self.color_sub = self.create_subscription(Image, '/color', self.color_callback, 10)
 
@@ -27,6 +34,15 @@ class Mapper(Node):
 
         # create the camera info subscriber
         self.camera_info_sub = self.create_subscription(CameraInfo, '/camera_info', self.camera_info_callback, 10)
+
+    def tf_callback(self, msg: TransformStamped):
+        # assign the extrinsic parameters
+        self.extrinsic = msg.transform
+        # instantiate the camera and reconstruction
+        if self.camera is None and self.intrinsic is not None:
+            self.camera = Camera(self.intrinsic, self.extrinsic)
+            self.reconstruction = Reconstruction(self.camera)
+
 
     def color_callback(self, msg: Image):
         # TODO
