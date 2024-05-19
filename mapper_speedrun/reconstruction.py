@@ -1,5 +1,6 @@
 import numpy as np
 from .camera import Camera
+from .types import bbox_t
 
 class Reconstruction:
 
@@ -45,3 +46,23 @@ class Reconstruction:
         point = np.dot(self.camera.extrinsic, point)
 
         return point
+    
+    def pixelForBBox(self, bbox: bbox_t) -> np.ndarray:
+        """
+        Get the midpoint pixel and depth for a given bounding box (x, y, d).
+
+        Args:
+            bbox (bbox_t): Bounding box
+        
+        Returns:
+            np.ndarray: Point in format (x, y, d)
+        """
+
+        # get the pixel coordinates
+        x = bbox.x + float(bbox.h / 2)
+        y = bbox.y + float(bbox.w / 2)
+
+        # get the depth from the last depth image received
+        d = self.camera.last_depth[x][y]
+
+        return np.array([x, y, d])
