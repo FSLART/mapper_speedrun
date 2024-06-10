@@ -1,4 +1,5 @@
 import rclpy
+import rclpy.duration
 from rclpy.node import Node
 import tf2_ros
 from sensor_msgs.msg import Image, CameraInfo
@@ -22,7 +23,7 @@ class Mapper(Node):
         self.extrinsic = None
 
         # create the parameters
-        self.declare_parameter('model_path', 'src/mapper_speedrun/model/damo_yolo.onnx')
+        self.declare_parameter('model_path', 'model/damo_yolo.onnx')
         self.declare_parameter('rgb_topic', '/left_image')
         self.declare_parameter('depth_topic', '/depth')
         self.declare_parameter('info_topic', '/depth_info')
