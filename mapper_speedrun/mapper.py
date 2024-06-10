@@ -78,18 +78,27 @@ class Mapper(Node):
 
     def color_callback(self, msg: Image):
         # convert the image to numpy array
-        img = np.array(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 3)
+        img = np.array(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 4)
         # capture the color image
+        if self.camera is None:
+            return
         self.camera.capture_color(img)
         # detect cones using the detector
         cones: List[bbox_t] = self.detector.predict(self.camera.last_color)
+        print("I'M HERE")
         # reconstruct the cones
         cone_array = ConeArray()
-        for cone in cones:
-            # get the xyd values
-            xyd = self.reconstruction.pixelForBBox(cone)
-            # get the 3D position of the cone
-            pos = self.reconstruction.deprojectPixelToPoint(xyd)
+        cone_marker_array = MarkerArray()
+        for i, cone in enumerate(cones):
+
+            try:
+                # get the xyd values
+                xyd = self.reconstruction.pixelForBBox(cone)
+                # get the 3D position of the cone
+                pos = self.reconstruction.deprojectPixelToPoint(xyd)
+            except ValueError:
+                continue
+            
             # convert to Cone message
             cone_msg = Cone()
             cone_msg.position.x = pos[0]
@@ -97,19 +106,42 @@ class Mapper(Node):
             cone_msg.position.z = pos[2]
             cone_msg.class_type = cone.class_id
             cone_array.cones.append(cone_msg)
+
+            # create the marker
+            marker = Marker()
+            marker.header.frame_id = self.get_parameter('base_frame').get_parameter_value().string_value
+            marker.header.stamp = self.get_clock().now().to_msg()
+            marker.id = cone.class_id + i
+            marker.type = Marker.CYLINDER
+            marker.action = Marker.ADD
+            marker.pose.position.x = pos[0]
+            marker.pose.position.y = pos[1]
+            marker.pose.position.z = pos[2]
+            marker.pose.orientation.w = 1
+            marker.scale.x = 0.1
+            marker.scale.y = 0.1
+            marker.scale.z = 0.3
+            marker.color.r = 1.0
+            marker.color.g = 0.0
+            marker.color.b = 0.0
+            cone_marker_array.markers.append(marker)
+
         # publish the cone array
         self.cone_pub.publish(cone_array)
+
+        # publish the cone markers
+        self.cone_markers_pub.publish(cone_marker_array)
 
 
     def depth_callback(self, msg: Image):
         # convert the image to numpy array
-        img = np.array(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 3)
+        img = np.array(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 4)
         # capture the depth image
         self.camera.capture_depth(img)
 
     def camera_info_callback(self, msg: CameraInfo):
         # assign the intrinsic parameters
-        self.intrinsic = msg.K
+        self.intrinsic = msg.k
         self.intrinsic = np.reshape(self.intrinsic, (3, 3))
         # instantiate the camera and reconstruction
         if self.camera is None and self.extrinsic is not None:
