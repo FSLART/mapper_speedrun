@@ -15,7 +15,7 @@ OR
 ## Building
 ### Docker (recommended for development)
 - Build the container with `docker build -t mapper .`.
-- Run the conntainer with `docker run --rm -it --gpus all --network=host mapper`.
+- Run the conntainer with `docker run --rm -it --gpus all --network=host --ipc=host mapper`.
 
 ### Bare metal
 TODO
