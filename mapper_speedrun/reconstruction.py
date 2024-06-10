@@ -58,6 +58,12 @@ class Reconstruction:
             np.ndarray: Point in format (x, y, d)
         """
 
+        if bbox is None:
+            raise ValueError("Bounding box cannot be None")
+        
+        if self.camera.last_depth is None:
+            raise ValueError("No depth image received yet")
+
         # get the pixel coordinates
         x = bbox.x + float(bbox.h / 2)
         y = bbox.y + float(bbox.w / 2)

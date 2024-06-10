@@ -36,6 +36,9 @@ class Camera:
         Args:
             img (np.ndarray): The color image captured by the camera.
         """
+        # remove the alpha channel if it exists
+        if img.shape[2] == 4:
+            img = img[:, :, :3]
         self.last_color = img
 
     def capture_depth(self, img: np.ndarray):
