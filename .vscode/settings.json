@@ -1,0 +1,19 @@
+{
+    "ros.distro": "humble",
+    "ros.rosSetupScript": "/opt/ros/humble/setup.bash",
+    "ros.isolateEnvironment": "false",
+    "python.autoComplete.extraPaths": [
+        "/ros2_ws/build/mapper_speedrun",
+        "/ros2_ws/install/mapper_speedrun/lib/python3.10/site-packages",
+        "/ros2_ws/install/lart_msgs/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/ros2_ws/build/mapper_speedrun",
+        "/ros2_ws/install/mapper_speedrun/lib/python3.10/site-packages",
+        "/ros2_ws/install/lart_msgs/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}
