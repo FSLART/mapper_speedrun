@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     ros-humble-tf2-ros \
     ros-humble-sensor-msgs \
     ros-humble-geometry-msgs \
-    git
+    git \
+    libgl1
 
 # install dependencies for the package
 RUN pip3 install \
@@ -23,7 +24,7 @@ RUN pip3 install \
 RUN mkdir -p /ros2_ws/src
 
 # install lart_msgs
-WORKDIR  /ros2_ws/src
+WORKDIR  /ros2_ws/src/lart_msgs
 RUN git clone -b dev https://github.com/FSLART/lart_msgs.git
 
 # build lart_msgs
@@ -31,7 +32,7 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
     colcon build --symlink-install --parallel-workers 4 --packages-select lart_msgs"
 
 # copy the package to the workspace
-COPY . /ros2_ws/src
+COPY . /ros2_ws/src/mapper_speedrun
 
 # set the working directory
 WORKDIR /ros2_ws
@@ -41,4 +42,4 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
     colcon build --symlink-install --parallel-workers 4"
 
 # start the node
-CMD ["/bin/bash", "-c", "source /ros2_ws/install/setup.bash && ros2 run mapper_speedrun mapper"]
+CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /ros2_ws/install/setup.bash && ros2 launch mapper_speedrun mapper_launch.py"]
