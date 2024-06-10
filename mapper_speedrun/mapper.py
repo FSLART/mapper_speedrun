@@ -4,6 +4,7 @@ import tf2_ros
 from sensor_msgs.msg import Image, CameraInfo
 import numpy as np
 from geometry_msgs.msg import TransformStamped
+from visualization_msgs.msg import Marker, MarkerArray
 from scipy.spatial.transform import Rotation as R
 from lart_msgs.msg import Cone, ConeArray
 from .camera import Camera
@@ -21,13 +22,14 @@ class Mapper(Node):
         self.extrinsic = None
 
         # create the parameters
-        self.declare_parameter('model_path', 'damo_yolo.onnx')
-        self.declare_parameter('rgb_topic', '/color')
+        self.declare_parameter('model_path', 'src/mapper_speedrun/model/damo_yolo.onnx')
+        self.declare_parameter('rgb_topic', '/left_image')
         self.declare_parameter('depth_topic', '/depth')
-        self.declare_parameter('info_topic', '/camera_info')
+        self.declare_parameter('info_topic', '/depth_info')
         self.declare_parameter('cones_topic', '/cones')
+        self.declare_parameter('cone_markers_topic', '/cone_markers')
         self.declare_parameter('base_frame', 'base_link')
-        self.declare_parameter('camera_frame', 'camera_link')
+        self.declare_parameter('camera_frame', 'zed_camera')
 
         # create the cone detector
         model_path = self.get_parameter('model_path').get_parameter_value().string_value
@@ -41,7 +43,7 @@ class Mapper(Node):
 
         # create the tf listener (camera_link to base_link)
         self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # create the color subscriber
         rgb_topic = self.get_parameter('rgb_topic').get_parameter_value().string_value
@@ -59,6 +61,10 @@ class Mapper(Node):
         cones_topic = self.get_parameter('cones_topic').get_parameter_value().string_value
         self.cone_pub = self.create_publisher(ConeArray, cones_topic, 10)
 
+        # create the cone markers publisher
+        cone_markers_topic = self.get_parameter('cone_markers_topic').get_parameter_value().string_value
+        self.cone_markers_pub = self.create_publisher(MarkerArray, cone_markers_topic, 10)
+
     def tf_callback(self):
         # lookup the transform from camera_link to base_link
         base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
@@ -66,9 +72,14 @@ class Mapper(Node):
         trans = self.tf_buffer.lookup_transform(base_frame, camera_frame, rclpy.time.Time())
         # get the extrinsic parameters
         translation = trans.transform.translation
+        translation = np.array([translation.x, translation.y, translation.z])
         rotation = trans.transform.rotation
+        rotation = np.array([rotation.x, rotation.y, rotation.z, rotation.w])
         extrinsic = R.from_quat(rotation) # convert quaternion to transform matrix
-        extrinsic = np.append(extrinsic, translation, axis=0) # append the translation
+        extrinsic = extrinsic.as_matrix()
+        translation = translation.reshape(-1, 1)
+        extrinsic = np.append(extrinsic, translation, axis=1) # append the translation
+        self.extrinsic = np.append(extrinsic, [[0, 0, 0, 1]], axis=0) # append the last row
 
         # verify if the camera is already instantiated
         if self.camera is None and self.intrinsic is not None:
