@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     ros-humble-tf2-ros \
     ros-humble-sensor-msgs \
     ros-humble-geometry-msgs \
+    ros-humble-foxglove-bridge \
     git \
     libgl1 \
     gdb
