@@ -9,9 +9,5 @@ def generate_launch_description():
             executable='mapper',
             name='mapper'
         ),
-        Node(package="tf2_ros", executable="static_transform_publisher", arguments=["0", "0", "0", "0", "0", "0", "base_link", "zed_camera"]),
-        ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', '/bags/rosbag2_2024_06_12-13_18_05'],
-            output='screen'
-        )
+        # Node(package="tf2_ros", executable="static_transform_publisher", arguments=["0", "0", "0", "0", "0", "0", "base_link", "zed_camera"])
     ])
