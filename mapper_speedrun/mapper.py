@@ -6,6 +6,7 @@ from sensor_msgs.msg import Image, CameraInfo
 import numpy as np
 from geometry_msgs.msg import TransformStamped
 from visualization_msgs.msg import Marker, MarkerArray
+from std_msgs.msg import Int16
 from scipy.spatial.transform import Rotation as R
 from lart_msgs.msg import Cone, ConeArray
 from .camera import Camera
@@ -88,6 +89,8 @@ class Mapper(Node):
         translation = translation.reshape(-1, 1)
         extrinsic = np.append(extrinsic, translation, axis=1) # append the translation
         self.extrinsic = np.append(extrinsic, [[0, 0, 0, 1]], axis=0) # append the last row
+        # invert the extrinsic matrix
+        self.extrinsic = np.linalg.inv(self.extrinsic)
 
         # verify if the camera is already instantiated
         if self.camera is None and self.intrinsic is not None:
@@ -114,9 +117,19 @@ class Mapper(Node):
             try:
                 # get the xyd values
                 xyd = self.reconstruction.pixelForBBox(cone)
+            except RuntimeError as e:
+                self.get_logger().warning(f"Pixel for bounding box runtime error: {str(e)}")
+                continue
+            except ValueError as e:
+                # TODO: setting an array element with a sequence. The requested array has an inhomogeneous shape after 1 dimensions. The detected shape was (3,) + inhomogeneous part.
+                self.get_logger().error(f"Pixel for bounding box value error: {str(e)}")
+                continue
+
+            try:
                 # get the 3D position of the cone
                 pos = self.reconstruction.deprojectPixelToPoint(xyd)
-            except ValueError:
+            except ValueError as e:
+                self.get_logger().error(f"Pixel to point value error: {str(e)}")
                 continue
             
             # convert to Cone message
@@ -124,7 +137,8 @@ class Mapper(Node):
             cone_msg.position.x = pos[0]
             cone_msg.position.y = pos[1]
             cone_msg.position.z = pos[2]
-            cone_msg.class_type = cone.class_id
+            cone_msg.class_type = Int16()
+            cone_msg.class_type.data = cone.class_id
             cone_array.cones.append(cone_msg)
 
             # create the marker
@@ -137,7 +151,7 @@ class Mapper(Node):
             marker.pose.position.x = pos[0]
             marker.pose.position.y = pos[1]
             marker.pose.position.z = pos[2]
-            marker.pose.orientation.w = 1
+            marker.pose.orientation.w = 1.0
             marker.scale.x = 0.1
             marker.scale.y = 0.1
             marker.scale.z = 0.3
