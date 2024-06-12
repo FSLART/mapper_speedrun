@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
 {
-	"name": "Existing Dockerfile",
+	"name": "Mapper Speedrun",
 	"build": {
 		// Sets the run context to one level up instead of the .devcontainer folder.
 		"context": "..",
@@ -15,15 +15,15 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"ms-iot.vscode-ros"
+				"ms-iot.vscode-ros",
+				"ms-azuretools.vscode-docker"
 			]
 		}
-	}
+	},
 
-	/*
 	"mounts": [
-		"source=/home/carlostojal/Documents/LART/mapper_speedrun,target=/ros2_ws/src/mapper_speedrun,type=bind"
-	]*/
+		"source=/home/carlostojal/Documents/LART/bags/rosbag2_2024_06_12-13_18_05,target=/bags/rosbag2_2024_06_12-13_18_05,type=bind"
+	]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},

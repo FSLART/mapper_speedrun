@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
     ros-humble-sensor-msgs \
     ros-humble-geometry-msgs \
     git \
-    libgl1
+    libgl1 \
+    gdb
 
 # install dependencies for the package
 RUN pip3 install \
