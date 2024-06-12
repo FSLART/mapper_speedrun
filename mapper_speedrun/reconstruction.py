@@ -65,8 +65,8 @@ class Reconstruction:
             raise ValueError("No depth image received yet")
 
         # get the pixel coordinates
-        x = bbox.x + float(bbox.h / 2)
-        y = bbox.y + float(bbox.w / 2)
+        x = int(bbox.x + float(bbox.h / 2))
+        y = int(bbox.y + float(bbox.w / 2))
 
         # get the depth from the last depth image received
         d = self.camera.last_depth[x][y]
