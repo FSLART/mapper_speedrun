@@ -59,7 +59,7 @@ class ConeDetector:
         # filter with nms-iou
         bboxes = nms_iou(boxes, probs, boxes.shape[1], probs.shape[2], self.iou_thres, self.confidence_thres)
 
-        # convert the bboxes to the original size
-        bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes]
+        # convert the bboxes to the original size and remove the ones outside
+        bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]
 
         return bboxes
