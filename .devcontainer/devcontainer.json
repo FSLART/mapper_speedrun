@@ -1,0 +1,42 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
+{
+	"name": "Mapper Speedrun",
+	"build": {
+		// Sets the run context to one level up instead of the .devcontainer folder.
+		"context": "..",
+		// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
+		"dockerfile": "../Dockerfile"
+	},
+
+	"workspaceMount": "source=${localWorkspaceFolder},target=/ros2_ws/src/mapper_speedrun,type=bind",
+	"workspaceFolder": "/ros2_ws/src/mapper_speedrun",
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-iot.vscode-ros",
+				"ms-azuretools.vscode-docker"
+			]
+		}
+	},
+
+	"mounts": [
+		"source=/home/carlostojal/Documents/LART/bags/rosbag2_2024_06_12-13_18_05,target=/bags/rosbag2_2024_06_12-13_18_05,type=bind"
+	]
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Uncomment the next line to run commands after the container is created.
+	// "postCreateCommand": "cat /etc/os-release",
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "devcontainer"
+}
