@@ -1,4 +1,6 @@
 import numpy as np
+import struct
+import math
 from .camera import Camera
 from .types import bbox_t
 
@@ -32,18 +34,24 @@ class Reconstruction:
             raise ValueError("Pixel must be in format [x, y, d]")
         
         # get the point coordinates
-        point_x: float = (pixel[0] - self.camera.intrinsic[0, 2]) / self.camera.intrinsic[0, 0]
-        point_y: float = (pixel[1] - self.camera.intrinsic[1, 2]) / self.camera.intrinsic[1, 1]
-        point_z: float = 1.0
+        point_x: float = pixel[2]
+        point_y: float = -(pixel[0] - self.camera.intrinsic[0, 2]) * pixel[2] / self.camera.intrinsic[0, 0]
+        point_z: float = -(pixel[1] - self.camera.intrinsic[1, 2]) * pixel[2] / self.camera.intrinsic[1, 1]
 
         # assign the values
         point: np.ndarray = np.array([[point_x], [point_y], [point_z]])
 
-        # normalize the point to the distance d (euclidean norm)
-        point = point * pixel[2] / np.linalg.norm(point)
+        # add the homogeneous coordinate
+        point = np.vstack((point, np.array([[1.0]])))
 
         # transform the point to the car frame
-        point = np.dot(self.camera.extrinsic, point)
+        point = self.camera.extrinsic @ point
+
+        # remove the homogeneous coordinate
+        point = point[:-1]
+
+        # transpose
+        point = point.T[0]
 
         return point
     
@@ -62,13 +70,20 @@ class Reconstruction:
             raise ValueError("Bounding box cannot be None")
         
         if self.camera.last_depth is None:
-            raise ValueError("No depth image received yet")
+            raise RuntimeError("No depth image received yet")
 
         # get the pixel coordinates
-        x = int(bbox.x + float(bbox.h / 2))
-        y = int(bbox.y + float(bbox.w / 2))
+        x = int(bbox.x + float(bbox.w / 2))
+        y = int(bbox.y + float(bbox.h / 2))
 
         # get the depth from the last depth image received
-        d = self.camera.last_depth[x][y]
+        # indexes are inverted because Python OpenCV is row-major
+        d_vec = self.camera.last_depth[y][x].tobytes()
+
+        d = struct.unpack('f', d_vec)[0]
+
+        # verify if infinite depth
+        if math.isinf(d) or math.isnan(d):
+            raise ValueError("Infinite/invalid depth detected")
 
         return np.array([x, y, d])
