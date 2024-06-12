@@ -7,7 +7,7 @@ def nms_iou(boxes: List[float], scores: List[float], num_boxes: int, num_classes
     # create a list of bbox_t objects
     bboxes = []
     for i in range(num_boxes):
-        bbox = bbox_t(boxes[0, i, 0], boxes[0, i, 1], boxes[0, i, 2], boxes[0, i, 3], 0.0, 0)
+        bbox = bbox_t(boxes[0, i, 0], boxes[0, i, 1], boxes[0, i, 2] - boxes[0, i, 0], boxes[0, i, 3] - boxes[0, i, 1], 0.0, 0)
         # find the class with the highest score
         max_score = 0.0
         class_id = 0
