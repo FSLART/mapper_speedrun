@@ -13,10 +13,14 @@ from .cone_detector import ConeDetector
 from .reconstruction import Reconstruction
 from .types import bbox_t
 from typing import List
+import os
 
 class Mapper(Node):
     def __init__(self):
         super().__init__('mapper')
+
+        self.get_logger().info(f"Mapper node started in {os.getcwd()}")
+
         self.create_timer(1.0, self.tf_callback)
         
         self.intrinsic = None
@@ -24,9 +28,9 @@ class Mapper(Node):
 
         # create the parameters
         self.declare_parameter('model_path', 'model/damo_yolo.onnx')
-        self.declare_parameter('rgb_topic', '/left_image')
-        self.declare_parameter('depth_topic', '/depth')
-        self.declare_parameter('info_topic', '/depth_info')
+        self.declare_parameter('rgb_topic', '/zed/image_raw')
+        self.declare_parameter('depth_topic', '/zed/depth/image_raw')
+        self.declare_parameter('info_topic', '/zed/depth/camera_info')
         self.declare_parameter('cones_topic', '/cones')
         self.declare_parameter('cone_markers_topic', '/cone_markers')
         self.declare_parameter('base_frame', 'base_link')
@@ -70,7 +74,10 @@ class Mapper(Node):
         # lookup the transform from camera_link to base_link
         base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
         camera_frame = self.get_parameter('camera_frame').get_parameter_value().string_value
-        trans = self.tf_buffer.lookup_transform(base_frame, camera_frame, rclpy.time.Time())
+        try:
+            trans = self.tf_buffer.lookup_transform(base_frame, camera_frame, rclpy.time.Time(), rclpy.duration.Duration(seconds=0.5))
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            return
         # get the extrinsic parameters
         translation = trans.transform.translation
         translation = np.array([translation.x, translation.y, translation.z])
@@ -86,18 +93,19 @@ class Mapper(Node):
         if self.camera is None and self.intrinsic is not None:
             self.camera = Camera(self.intrinsic, self.extrinsic)
             self.reconstruction = Reconstruction(self.camera)
+        else:
+            self.get_logger().warning("Received tf without camera initialized!")
 
 
     def color_callback(self, msg: Image):
         # convert the image to numpy array
-        img = np.array(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 4)
+        img = np.array(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 3)
         # capture the color image
         if self.camera is None:
             return
         self.camera.capture_color(img)
         # detect cones using the detector
         cones: List[bbox_t] = self.detector.predict(self.camera.last_color)
-        print("I'M HERE")
         # reconstruct the cones
         cone_array = ConeArray()
         cone_marker_array = MarkerArray()
@@ -148,6 +156,8 @@ class Mapper(Node):
     def depth_callback(self, msg: Image):
         # convert the image to numpy array
         img = np.array(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 4)
+        if self.camera is None:
+            return
         # capture the depth image
         self.camera.capture_depth(img)
 
