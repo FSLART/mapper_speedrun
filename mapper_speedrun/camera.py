@@ -29,7 +29,10 @@ class Camera:
         self.last_color = None
         self.last_depth = None
 
-    def capture_color(self, img: np.ndarray):
+        self.last_color_stamp = None
+        self.last_depth_stamp = None
+
+    def capture_color(self, img: np.ndarray, timestamp: float):
         """
         Capture the color image.
 
@@ -41,7 +44,9 @@ class Camera:
             img = img[:, :, :3]
         self.last_color = img
 
-    def capture_depth(self, img: np.ndarray):
+        self.last_color_stamp = timestamp
+
+    def capture_depth(self, img: np.ndarray, timestamp: float):
         """
         Capture the depth image.
 
@@ -49,3 +54,5 @@ class Camera:
             img (np.ndarray): The depth image captured by the camera.
         """
         self.last_depth = img        
+
+        self.last_depth_stamp = timestamp
