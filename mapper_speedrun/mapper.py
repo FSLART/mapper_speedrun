@@ -36,8 +36,8 @@ class Mapper(Node):
         self.declare_parameter('info_topic', '/zed/depth/camera_info')
         self.declare_parameter('cones_topic', '/cones')
         self.declare_parameter('cone_markers_topic', '/cone_markers')
-        self.declare_parameter('base_frame', 'base_link')
-        self.declare_parameter('camera_frame', 'zed_camera')
+        self.declare_parameter('base_frame', 'base_footprint')
+        self.declare_parameter('camera_frame', 'zed_camera_center')
 
         # create the QoS profile
         qos_profile = QoSProfile(
@@ -107,8 +107,6 @@ class Mapper(Node):
             translation = translation.reshape(-1, 1)
             extrinsic = np.append(extrinsic, translation, axis=1) # append the translation
             self.extrinsic = np.append(extrinsic, [[0, 0, 0, 1]], axis=0) # append the last row
-            # invert the extrinsic matrix
-            self.extrinsic = np.linalg.inv(self.extrinsic)
 
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             # use the identity matrix as extrinsic parameters
@@ -166,10 +164,6 @@ class Mapper(Node):
 
             for i, cone in enumerate(cones):
 
-                corner1 = (int(cone.x), int(cone.y))
-                corner2 = (int(cone.x + cone.w), int(cone.y + cone.h))
-                midpoint = (int(cone.x + (cone.w / 2)), int(cone.y + (cone.h / 2)))
-
                 try:
                     # get the xyd values
                     xyd = self.reconstruction.pixelForBBox(cone, last_depth_img)
@@ -204,13 +198,14 @@ class Mapper(Node):
                 marker.id = self.frame_counter + cone.class_id + i
                 marker.type = Marker.CYLINDER
                 marker.action = Marker.ADD
+                marker.lifetime = rclpy.duration.Duration(seconds=1).to_msg()
                 marker.pose.position.x = pos[0]
                 marker.pose.position.y = pos[1]
                 marker.pose.position.z = pos[2]
                 marker.pose.orientation.w = 1.0
-                marker.scale.x = 0.1
-                marker.scale.y = 0.1
-                marker.scale.z = 0.3
+                marker.scale.x = 0.23
+                marker.scale.y = 0.23
+                marker.scale.z = 0.31
                 marker.color.r = 1.0
                 marker.color.g = 0.0
                 marker.color.b = 0.0
@@ -220,18 +215,19 @@ class Mapper(Node):
             # publish the cone array
             self.cone_pub.publish(cone_array)
 
-            # publish the cone markers
-            self.cone_markers_pub.publish(cone_marker_array)
-
             # remove old markers
-            cone_marker_array = MarkerArray()
+            rm_cone_marker_array = MarkerArray()
             for marker_id in self.marker_ids:
                 marker = Marker()
                 marker.header.frame_id = self.get_parameter('base_frame').get_parameter_value().string_value
                 marker.header.stamp = self.get_clock().now().to_msg()
                 marker.id = marker_id
                 marker.action = Marker.DELETE
-                cone_marker_array.markers.append(marker)
+                rm_cone_marker_array.markers.append(marker)
+            self.cone_markers_pub.publish(rm_cone_marker_array)
+            self.marker_ids.clear()
+
+            # publish the new cone markers
             self.cone_markers_pub.publish(cone_marker_array)
 
             # update the frame counter
