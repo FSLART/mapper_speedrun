@@ -69,8 +69,8 @@ class Reconstruction:
         if bbox is None:
             raise ValueError("Bounding box cannot be None")
         
-        if self.camera.last_depth is None:
-            raise RuntimeError("No depth image received yet")
+        if depth_img is None:
+            raise RuntimeError("Depth image is None")
 
         # get the pixel coordinates
         x = int(bbox.x + float(bbox.w / 2))
