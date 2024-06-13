@@ -1,5 +1,4 @@
 import numpy as np
-import struct
 import math
 from .camera import Camera
 from .types import bbox_t
@@ -55,12 +54,13 @@ class Reconstruction:
 
         return point
     
-    def pixelForBBox(self, bbox: bbox_t) -> np.ndarray:
+    def pixelForBBox(self, bbox: bbox_t, depth_img: np.ndarray) -> np.ndarray:
         """
         Get the midpoint pixel and depth for a given bounding box (x, y, d).
 
         Args:
             bbox (bbox_t): Bounding box
+            depth_img (np.ndarray): Depth image
         
         Returns:
             np.ndarray: Point in format (x, y, d)
@@ -78,12 +78,10 @@ class Reconstruction:
 
         # get the depth from the last depth image received
         # indexes are inverted because Python OpenCV is row-major
-        d_vec = self.camera.last_depth[y][x].tobytes()
-
-        d = struct.unpack('f', d_vec)[0]
+        d = depth_img[y][x]
 
         # verify if infinite depth
         if math.isinf(d) or math.isnan(d):
-            raise ValueError("Infinite/invalid depth detected")
+            raise ValueError(f"Infinite/invalid depth {d} detected at pixel ({x}, {y})")
 
         return np.array([x, y, d])
