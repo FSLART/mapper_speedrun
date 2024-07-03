@@ -33,12 +33,14 @@ class Reconstruction:
             raise ValueError("Pixel must be in format [x, y, d]")
         
         # get the point coordinates
-        point_x: float = pixel[2]
-        point_y: float = -(pixel[0] - self.camera.intrinsic[0, 2]) * point_x / self.camera.intrinsic[0, 0]
-        point_z: float = -(pixel[1] - self.camera.intrinsic[1, 2]) * point_x / self.camera.intrinsic[1, 1]
+        x_over_z = (self.camera.intrinsic[0, 2] - pixel[0]) / self.camera.intrinsic[0, 0]
+        y_over_z = (self.camera.intrinsic[1, 2] - pixel[1]) / self.camera.intrinsic[1, 1]
+        point_z = pixel[2] / np.sqrt(1. + x_over_z**2 + y_over_z**2)
+        point_x = x_over_z * point_z
+        point_y = y_over_z * point_z
 
         # assign the values
-        point: np.ndarray = np.array([[point_x], [point_y], [point_z]])
+        point: np.ndarray = np.array([[point_z], [-point_x], [-point_y]])
 
         # add the homogeneous coordinate
         point = np.vstack((point, np.array([[1.0]])))
