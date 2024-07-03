@@ -14,8 +14,9 @@ from .cone_detector import ConeDetector
 from .reconstruction import Reconstruction
 from .types import bbox_t
 from typing import List
-from threading import Thread
+from threading import Thread, Lock, Condition
 import os
+import time
 import copy
 
 class Mapper(Node):
@@ -90,6 +91,9 @@ class Mapper(Node):
         # counter of frames
         self.frame_counter = 0
 
+        # start the inference task
+        self.inference_thread = Thread(target=self.inference_task).start()
+
     def tf_callback(self):
         # lookup the transform from camera_link to base_link
         base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
@@ -142,10 +146,29 @@ class Mapper(Node):
         # capture the depth image
         self.camera.capture_depth(img, msg.header.stamp.sec + (msg.header.stamp.nanosec / 1e9))
 
-        def inference_task(last_color_img: np.ndarray, last_depth_img: np.ndarray, color_time: float, depth_time: float):
+    def camera_info_callback(self, msg: CameraInfo):
+        # assign the intrinsic parameters
+        self.intrinsic = msg.k
+        self.intrinsic = np.reshape(self.intrinsic, (3, 3))
+        # instantiate the camera and reconstruction
+        if self.camera is None and self.extrinsic is not None:
+            self.camera = Camera(self.intrinsic, self.extrinsic)
+            self.reconstruction = Reconstruction(self.camera)
+
+
+    def inference_task(self):
+
+        while rclpy.ok():
+
+            # check if the camera and reconstruction are initialized
+            if self.camera is None or self.reconstruction is None:
+                continue
 
             # mark the worker as busy
             self.worker_busy = True
+
+            # get the last color image
+            last_color_img = self.camera.get_last_color()
             
             # detect cones using the detector
             cones: List[bbox_t] = self.detector.predict(last_color_img)
@@ -153,12 +176,8 @@ class Mapper(Node):
             cone_array = ConeArray()
             cone_marker_array = MarkerArray()
 
-            # create an image to draw bounding boxes
-            img_bb = copy.deepcopy(last_color_img)
-
-            if last_depth_img is not None:
-                d_img_bb = copy.deepcopy(last_depth_img)
-                d_img_bb = (d_img_bb / 10.0) * 255 # 25 is the max depth range of the camera
+            # get the last depth image
+            last_depth_img = self.camera.get_last_depth()
 
             num_failed_cones = 0
 
@@ -235,19 +254,6 @@ class Mapper(Node):
 
             # mark the worker as free
             self.worker_busy = False
-
-        # start the inference task if the worker is not busy
-        if not self.worker_busy and self.camera.last_color is not None and self.camera.last_depth is not None:
-            Thread(target=inference_task, args=(self.camera.last_color.copy(), self.camera.last_depth.copy(), self.camera.last_color_stamp, self.camera.last_depth_stamp)).start()
-
-    def camera_info_callback(self, msg: CameraInfo):
-        # assign the intrinsic parameters
-        self.intrinsic = msg.k
-        self.intrinsic = np.reshape(self.intrinsic, (3, 3))
-        # instantiate the camera and reconstruction
-        if self.camera is None and self.extrinsic is not None:
-            self.camera = Camera(self.intrinsic, self.extrinsic)
-            self.reconstruction = Reconstruction(self.camera)
 
 def main(args=None):
     rclpy.init(args=args)

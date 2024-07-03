@@ -1,4 +1,5 @@
 import numpy as np
+from threading import Condition
 
 class Camera:
     """
@@ -27,10 +28,17 @@ class Camera:
         self.extrinsic = extrinsic
 
         self.last_color = None
+        self.new_color_available = False
         self.last_depth = None
+        self.new_depth_available = False
 
         self.last_color_stamp = None
         self.last_depth_stamp = None
+
+        # create a condition variable to notify when a new image is available
+        self.color_cv = Condition()
+        self.depth_cv = Condition()
+
 
     def capture_color(self, img: np.ndarray, timestamp: float):
         """
@@ -42,9 +50,13 @@ class Camera:
         # remove the alpha channel if it exists
         if img.shape[2] == 4:
             img = img[:, :, :3]
-        self.last_color = img
 
-        self.last_color_stamp = timestamp
+        # wait for the condition
+        with self.color_cv:
+            self.last_color = img
+            self.last_color_stamp = timestamp
+            self.new_color_available = True
+            self.color_cv.notify() # notify the waiting thread
 
     def capture_depth(self, img: np.ndarray, timestamp: float):
         """
@@ -53,6 +65,32 @@ class Camera:
         Args:
             img (np.ndarray): The depth image captured by the camera.
         """
-        self.last_depth = img        
 
-        self.last_depth_stamp = timestamp
+        # wait for the condition
+        with self.depth_cv:
+            self.last_depth = img
+            self.last_depth_stamp = timestamp
+            self.new_depth_available = True
+            self.depth_cv.notify() # notify the waiting thread
+
+    def get_last_color(self) -> np.ndarray:
+        """
+        Get the last color image captured by the camera.
+
+        Returns:
+            np.ndarray: The last color image captured by the camera.
+        """
+        with self.color_cv:
+            self.color_cv.wait_for(lambda: self.last_color is not None and self.new_color_available)
+            return self.last_color
+    
+    def get_last_depth(self) -> np.ndarray:
+        """
+        Get the last depth image captured by the camera.
+
+        Returns:
+            np.ndarray: The last depth image captured by the camera.
+        """
+        with self.depth_cv:
+            self.depth_cv.wait_for(lambda: self.last_depth is not None and self.new_depth_available)
+            return self.last_depth
