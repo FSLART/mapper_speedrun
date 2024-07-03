@@ -34,8 +34,8 @@ class Reconstruction:
         
         # get the point coordinates
         point_x: float = pixel[2]
-        point_y: float = -(pixel[0] - self.camera.intrinsic[0, 2]) * pixel[2] / self.camera.intrinsic[0, 0]
-        point_z: float = -(pixel[1] - self.camera.intrinsic[1, 2]) * pixel[2] / self.camera.intrinsic[1, 1]
+        point_y: float = -(pixel[0] - self.camera.intrinsic[0, 2]) * point_x / self.camera.intrinsic[0, 0]
+        point_z: float = -(pixel[1] - self.camera.intrinsic[1, 2]) * point_x / self.camera.intrinsic[1, 1]
 
         # assign the values
         point: np.ndarray = np.array([[point_x], [point_y], [point_z]])
