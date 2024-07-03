@@ -82,6 +82,7 @@ class Camera:
         """
         with self.color_cv:
             self.color_cv.wait_for(lambda: self.last_color is not None and self.new_color_available)
+            self.new_color_available = False
             return self.last_color
     
     def get_last_depth(self) -> np.ndarray:
@@ -93,4 +94,5 @@ class Camera:
         """
         with self.depth_cv:
             self.depth_cv.wait_for(lambda: self.last_depth is not None and self.new_depth_available)
+            self.new_depth_available = False
             return self.last_depth
