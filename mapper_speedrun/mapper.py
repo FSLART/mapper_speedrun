@@ -31,7 +31,7 @@ class Mapper(Node):
         self.extrinsic = None
 
         # create the parameters
-        self.declare_parameter('model_path', 'model/damo_yolo.onnx')
+        self.declare_parameter('model_path', 'src/mapper_speedrun/model/damo_yolo.onnx')
         self.declare_parameter('rgb_topic', '/zed/image_raw')
         self.declare_parameter('depth_topic', '/zed/depth/image_raw')
         self.declare_parameter('info_topic', '/zed/depth/camera_info')
@@ -172,6 +172,11 @@ class Mapper(Node):
             
             # detect cones using the detector
             cones: List[bbox_t] = self.detector.predict(last_color_img)
+
+            if len(cones) == 0:
+                self.worker_busy = False
+                continue
+
             # reconstruct the cones
             cone_array = ConeArray()
             cone_marker_array = MarkerArray()

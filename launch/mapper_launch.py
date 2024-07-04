@@ -9,5 +9,5 @@ def generate_launch_description():
             executable='mapper',
             name='mapper'
         ),
-        # Node(package="tf2_ros", executable="static_transform_publisher", arguments=["0", "0", "0", "0", "0", "0", "base_link", "zed_camera"])
+        # Node(package="tf2_ros", executable="static_transform_publisher", arguments=["0", "0", "0", "0", "0", "0", "base_footprint", "zed_camera_center"])
     ])

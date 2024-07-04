@@ -40,7 +40,7 @@ class Reconstruction:
         point_y = y_over_z * point_z
 
         # assign the values
-        point: np.ndarray = np.array([[point_z], [-point_x], [-point_y]])
+        point: np.ndarray = np.array([[point_z], [point_x], [point_y]])
 
         # add the homogeneous coordinate
         point = np.vstack((point, np.array([[1.0]])))

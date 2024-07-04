@@ -22,7 +22,7 @@
 	},
 
 	"mounts": [
-		"source=/home/carlostojal/Documents/LART/bags/rosbag2_2024_06_12-13_18_05,target=/bags/rosbag2_2024_06_12-13_18_05,type=bind"
+		"source=/home/carlostojal/bags,target=/bags,type=bind"
 	]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.

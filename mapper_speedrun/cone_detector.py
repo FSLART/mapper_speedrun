@@ -2,11 +2,12 @@ from onnxruntime import InferenceSession
 import numpy as np
 import cv2
 from typing import List
+import time
 from .types import bbox_t
 from .filtering import nms_iou
 
 class ConeDetector:
-    def __init__(self, model_path: str, confidence_thres: float = 0.6, iou_thres: float = 0.5, infer_size: int = 640):
+    def __init__(self, model_path: str, confidence_thres: float = 0.7, iou_thres: float = 0.7, infer_size: int = 640):
         self.model: InferenceSession = InferenceSession(model_path)
         self.confidence_thres = confidence_thres
         self.iou_thres = iou_thres
@@ -51,13 +52,19 @@ class ConeDetector:
         img_tensor = img_tensor[None]
 
         # run inference
+        inference_start = time.time()
         output = self.model.run(None, {self.model.get_inputs()[0].name: img_tensor.astype(np.float32)})
+        inference_end = time.time()
+        # print(f"Inference time: {inference_end-inference_start}s")
 
         probs = output[0]
         boxes = output[1]
 
         # filter with nms-iou
+        nms_start = time.time()
         bboxes = nms_iou(boxes, probs, boxes.shape[1], probs.shape[2], self.iou_thres, self.confidence_thres)
+        nms_end = time.time()
+        # print(f"NMS time: {nms_end-nms_start}s")
 
         # convert the bboxes to the original size and remove the ones outside
         bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]
