@@ -230,10 +230,30 @@ class Mapper(Node):
                 marker.scale.x = 0.23
                 marker.scale.y = 0.23
                 marker.scale.z = 0.31
-                marker.color.r = 1.0
-                marker.color.g = 0.0
-                marker.color.b = 0.0
-                marker.color.a = 1.0
+                if cone.class_id == 1:
+                    # yellow
+                    marker.color.r = 1.0
+                    marker.color.g = 1.0
+                    marker.color.b = 0.0
+                    marker.color.a = 1.0
+                elif cone.class_id == 2:
+                    # blue
+                    marker.color.r = 0.0
+                    marker.color.g = 0.0
+                    marker.color.b = 1.0
+                    marker.color.a = 1.0
+                elif cone.class_id == 3 or cone.class_id == 4:
+                    # orange
+                    marker.color.r = 1.0
+                    marker.color.g = 0.5
+                    marker.color.b = 0.0
+                    marker.color.a = 1.0
+                else:
+                    # red
+                    marker.color.r = 1.0
+                    marker.color.g = 0.0
+                    marker.color.b = 0.0
+                    marker.color.a = 1.0
                 cone_marker_array.markers.append(marker)
 
             # publish the cone array

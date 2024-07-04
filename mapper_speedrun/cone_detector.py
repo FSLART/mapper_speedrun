@@ -7,7 +7,7 @@ from .types import bbox_t
 from .filtering import nms_iou
 
 class ConeDetector:
-    def __init__(self, model_path: str, confidence_thres: float = 0.7, iou_thres: float = 0.7, infer_size: int = 640):
+    def __init__(self, model_path: str, confidence_thres: float = 0.5, iou_thres: float = 0.4, infer_size: int = 640):
         self.model: InferenceSession = InferenceSession(model_path)
         self.confidence_thres = confidence_thres
         self.iou_thres = iou_thres
