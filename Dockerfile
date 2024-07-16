@@ -38,8 +38,8 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
 COPY . /ros2_ws/src/mapper_speedrun
 
 # build the NMS C/C++ implementation
-RUN mkdir -p /ros2_ws/src/mapper_speedrun/nms_core/build
-WORKDIR /ros2_ws/src/mapper_speedrun/nms_core/build
+RUN mkdir -p /ros2_ws/src/mapper_speedrun/mapper_speedrun/nms_core/build
+WORKDIR /ros2_ws/src/mapper_speedrun/mapper_speedrun/nms_core/build
 RUN g++ -shared -fPIC -o libnms.so ../nms.cpp
 
 # set the working directory
