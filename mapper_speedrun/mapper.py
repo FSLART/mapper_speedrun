@@ -35,8 +35,8 @@ class Mapper(Node):
         self.declare_parameter('rgb_topic', '/zed/image_raw')
         self.declare_parameter('depth_topic', '/zed/depth/image_raw')
         self.declare_parameter('info_topic', '/zed/depth/camera_info')
-        self.declare_parameter('cones_topic', '/cones')
-        self.declare_parameter('cone_markers_topic', '/cone_markers')
+        self.declare_parameter('cones_topic', '/mapping/cones')
+        self.declare_parameter('cone_markers_topic', '/mapping/cone_markers')
         self.declare_parameter('base_frame', 'base_footprint')
         self.declare_parameter('camera_frame', 'zed_camera_center')
 
