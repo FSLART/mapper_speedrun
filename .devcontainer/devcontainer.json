@@ -9,6 +9,11 @@
 		"dockerfile": "../Dockerfile"
 	},
 
+	"runArgs": [
+		// use GPUs
+		"--gpus", "all"
+	],
+
 	"workspaceMount": "source=${localWorkspaceFolder},target=/ros2_ws/src/mapper_speedrun,type=bind",
 	"workspaceFolder": "/ros2_ws/src/mapper_speedrun",
 
