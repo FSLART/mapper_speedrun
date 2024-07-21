@@ -14,10 +14,10 @@ from .cone_detector import ConeDetector
 from .reconstruction import Reconstruction
 from .types import bbox_t
 from typing import List
-from threading import Thread, Lock, Condition
+from threading import Thread, Condition
 import os
-import time
-import copy
+
+MAX_MARKER_ID = 1000000000
 
 class Mapper(Node):
     def __init__(self):
@@ -219,7 +219,7 @@ class Mapper(Node):
                 marker = Marker()
                 marker.header.frame_id = self.get_parameter('base_frame').get_parameter_value().string_value
                 marker.header.stamp = self.get_clock().now().to_msg()
-                marker.id = self.frame_counter + cone.class_id + i
+                marker.id = (self.frame_counter + cone.class_id + i) % MAX_MARKER_ID
                 marker.type = Marker.CYLINDER
                 marker.action = Marker.ADD
                 marker.lifetime = rclpy.duration.Duration(seconds=1).to_msg()
@@ -260,15 +260,13 @@ class Mapper(Node):
             self.cone_pub.publish(cone_array)
 
             # remove old markers
-            rm_cone_marker_array = MarkerArray()
             for marker_id in self.marker_ids:
                 marker = Marker()
                 marker.header.frame_id = self.get_parameter('base_frame').get_parameter_value().string_value
                 marker.header.stamp = self.get_clock().now().to_msg()
                 marker.id = marker_id
                 marker.action = Marker.DELETE
-                rm_cone_marker_array.markers.append(marker)
-            self.cone_markers_pub.publish(rm_cone_marker_array)
+                cone_marker_array.markers.append(marker)
             self.marker_ids.clear()
 
             # publish the new cone markers
