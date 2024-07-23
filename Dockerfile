@@ -2,13 +2,22 @@ FROM nvidia/cuda:12.5.1-cudnn-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+RUN apt update && apt install git curl wget libssl-dev libeigen3-dev libcgal-dev -y
+
+# install TensorRT
+WORKDIR /tmp
+RUN wget https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/10.2.0/local_repo/nv-tensorrt-local-repo-ubuntu2204-10.2.0-cuda-12.5_1.0-1_amd64.deb
+RUN dpkg -i /tmp/nv-tensorrt-local-repo-ubuntu2204-10.2.0-cuda-12.5_1.0-1_amd64.deb
+RUN cp /var/nv-tensorrt-local-repo-ubuntu2204-10.2.0-cuda-12.5/nv-tensorrt-local-012FC2A5-keyring.gpg /usr/share/keyrings/
+RUN apt update
+RUN apt install tensorrt -y
+
 # enable ubuntu universe repository
 RUN apt update
 RUN apt install software-properties-common -y
 RUN apt-add-repository universe
 
 # add GPG key
-RUN apt update && apt install git curl wget libssl-dev libeigen3-dev libcgal-dev -y
 RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
 
 # add repository to sources list

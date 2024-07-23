@@ -27,7 +27,7 @@ class ConeDetector:
         ]
         """
         ort.set_default_logger_severity(3)
-        self.providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] # TODO: in Jetson, add TensorrtExecutionProvider
+        self.providers = ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'] # TODO: in Jetson, add TensorrtExecutionProvider
         self.model: InferenceSession = InferenceSession(model_path, providers=self.providers)
         print(f"Model running on {self.model.get_providers()}")
 
