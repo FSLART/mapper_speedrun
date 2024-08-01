@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.5.1-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -8,7 +8,7 @@ RUN apt update && apt install git curl wget libssl-dev libeigen3-dev libcgal-dev
 WORKDIR /tmp
 RUN wget https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/10.2.0/local_repo/nv-tensorrt-local-repo-ubuntu2204-10.2.0-cuda-12.5_1.0-1_arm64.deb
 RUN dpkg -i /tmp/nv-tensorrt-local-repo-ubuntu2204-10.2.0-cuda-12.5_1.0-1_arm64.deb
-RUN cp /var/nv-tensorrt-local-repo-ubuntu2204-10.2.0-cuda-12.5/nv-tensorrt-local-012FC2A5-keyring.gpg /usr/share/keyrings/
+RUN cp /var/nv-tensorrt-local-repo-ubuntu2204-10.2.0-cuda-12.5/*.gpg /usr/share/keyrings/
 RUN apt update
 RUN apt install tensorrt -y
 
@@ -49,9 +49,13 @@ RUN apt-get update && apt-get install -y \
     libgl1 \
     gdb
 
+# install onnx runtime
+# from this link: https://elinux.org/Jetson_Zoo#ONNX_Runtime. verify the python version
+RUN wget https://nvidia.box.com/shared/static/i7n40ki3pl2x57vyn4u7e9asyiqlnl7n.whl -O onnxruntime_gpu.whl
+RUN pip3 install onnxruntime_gpu.whl
+
 # install dependencies for the package
-RUN pip3 install \
-    onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple \
+RUN pip install \
     numpy \
     opencv-python \
     scipy
