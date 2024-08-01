@@ -51,8 +51,8 @@ RUN apt-get update && apt-get install -y \
 
 # install onnx runtime
 # from this link: https://elinux.org/Jetson_Zoo#ONNX_Runtime. verify the python version
-RUN wget https://nvidia.box.com/shared/static/i7n40ki3pl2x57vyn4u7e9asyiqlnl7n.whl -O onnxruntime_gpu.whl
-RUN pip3 install onnxruntime_gpu.whl
+RUN wget https://nvidia.box.com/shared/static/48dtuob7meiw6ebgfsfqakc9vse62sg4.whl -O onnxruntime_gpu-1.18.0-cp38-cp38-linux_aarch64.whl
+RUN pip3 install onnxruntime_gpu-1.18.0-cp38-cp38-linux_aarch64.whl
 
 # install dependencies for the package
 RUN pip install \
