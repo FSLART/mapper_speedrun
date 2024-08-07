@@ -1,4 +1,4 @@
-FROM fslart/cuda-ros-ubuntu20
+FROM nvidia/cuda:11.4.3-cudnn8-devel-ubuntu20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -28,7 +28,7 @@ RUN apt update
 RUN apt upgrade -y
 
 # install ROS
-RUN apt install ros-humble-ros-base -y
+RUN apt install ros-foxy-ros-base -y
 
 # setup environment libraries
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
@@ -41,10 +41,10 @@ RUN apt-get update && apt-get install -y \
     python3-vcstool \
     python3-rosdep \
     python3-pip \
-    ros-humble-tf2-ros \
-    ros-humble-sensor-msgs \
-    ros-humble-geometry-msgs \
-    ros-humble-foxglove-bridge \
+    ros-foxy-tf2-ros \
+    ros-foxy-sensor-msgs \
+    ros-foxy-geometry-msgs \
+    ros-foxy-foxglove-bridge \
     git \
     libgl1 \
     gdb
@@ -69,7 +69,7 @@ RUN echo "hello"
 RUN git clone -b dev https://github.com/FSLART/lart_msgs.git
 
 # build lart_msgs
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+RUN /bin/bash -c "source /opt/ros/foxy/setup.bash && \
     colcon build --symlink-install --parallel-workers 4 --packages-select lart_msgs"
 
 # copy the package to the workspace
@@ -84,8 +84,8 @@ RUN g++ -shared -fPIC -o libnms.so ../nms.cpp
 WORKDIR /ros2_ws
 
 # build the workspace
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+RUN /bin/bash -c "source /opt/ros/foxy/setup.bash && \
     colcon build --symlink-install --parallel-workers 4"
 
 # start the node
-CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /ros2_ws/install/setup.bash && ros2 launch /ros2_ws/src/mapper_speedrun/launch/mapper_launch.py"]
+CMD ["/bin/bash", "-c", "source /opt/ros/foxy/setup.bash && source /ros2_ws/install/setup.bash && ros2 launch /ros2_ws/src/mapper_speedrun/launch/mapper_launch.py"]
