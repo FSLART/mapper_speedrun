@@ -56,7 +56,7 @@ RUN pip3 install onnxruntime_gpu-1.18.0-cp310-cp310-linux_aarch64.whl
 
 # install dependencies for the package
 RUN pip install \
-    numpy \
+    numpy==1.26.4 \
     opencv-python \
     scipy
 
