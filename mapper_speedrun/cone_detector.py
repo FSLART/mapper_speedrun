@@ -86,8 +86,13 @@ class ConeDetector:
             print(f"Inference failed: {e}")
 
         # get the boxes and probs
-        probs = output[0]
-        boxes = output[1]
+        #if the output[0] has shape greater than 5/6 then it is all in the same tensor output ant it is the yolov8
+        if output[0].shape < 6: #DAMO-YOLO
+            probs = output[0]
+            boxes = output[1]
+        else:                   #YOLOv8
+            probs = output[0][4:]
+            boxes = output[0][:4]
 
         # filter with nms-iou
         nms_start = time.time()
