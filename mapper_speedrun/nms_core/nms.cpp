@@ -86,7 +86,7 @@ class NMS {
                 bboxes.insert({boxes[i*4], boxes[i*4+1], boxes[i*4+2], boxes[i*4+3], max_score, max_class});
             }
 
-            // std::cout << "I'M HERE" << std::endl;
+            std::cout << "I'M HERE " << num_boxes << std::endl;
             
             // iterate through the sorted boxes
             int i = 0;

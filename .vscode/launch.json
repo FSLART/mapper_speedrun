@@ -7,9 +7,10 @@
         {
             "name": "Debug Mapper",
             "request": "launch",
-            "target": "/ros2_ws/src/mapper_speedrun/launch/mapper_launch.py",
+            "target": "./launch/mapper_launch.py",
             "launch": ["rviz", "gz", "gzserver", "gzclient"],
             "type": "ros"
+            
         }
     ]
 }

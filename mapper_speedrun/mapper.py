@@ -31,7 +31,7 @@ class Mapper(Node):
         self.extrinsic = None
 
         # create the parameters
-        self.declare_parameter('model_path', '/ros2_ws/src/mapper_speedrun/model/damo_yolo.onnx')
+        self.declare_parameter('model_path', './model/damo_yolo.onnx')
         self.declare_parameter('rgb_topic', '/zed/image_raw')
         self.declare_parameter('depth_topic', '/zed/depth/image_raw')
         self.declare_parameter('info_topic', '/zed/depth/camera_info')
