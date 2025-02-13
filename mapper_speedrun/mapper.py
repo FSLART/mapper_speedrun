@@ -17,7 +17,12 @@ from typing import List
 from threading import Thread, Condition
 import os
 
+#for latency measure
+# from collections import deque
+# import time
+
 MAX_MARKER_ID = 1000000000
+
 
 class Mapper(Node):
     def __init__(self):
@@ -28,7 +33,14 @@ class Mapper(Node):
         # self.create_timer(1.0, self.tf_callback)
         
         self.intrinsic = None
-        self.extrinsic = np.eye(4)
+
+        R = np.eye(3)
+        T = np.array([-0.5, 0, 0.95])
+        transformation_matrix=np.eye(4)
+        transformation_matrix[:3, :3]= R
+        transformation_matrix[:3, 3] = T
+        self.extrinsic = transformation_matrix
+        # self.extrinsic = np.eye(4)
 
         # create the parameters
         self.declare_parameter('model_path', 'src/mapper_speedrun/model/damo_yolo.onnx')
@@ -50,7 +62,7 @@ class Mapper(Node):
 
         # create the cone detector
         model_path = self.get_parameter('model_path').get_parameter_value().string_value
-        self.detector = ConeDetector(model_path=model_path)
+        self.detector = ConeDetector(model_path=model_path, confidence_thres=0.5)
 
         # the camera will only be created when the camera_info topic is received and the transform
         self.camera = None
@@ -89,6 +101,9 @@ class Mapper(Node):
 
         # create a list for markers currently in scene. used for removing markers
         self.marker_ids = []
+
+        #for latency measures only
+        #self.latencies= deque(maxlen=500)
 
         # counter of frames
         self.frame_counter = 0
@@ -163,7 +178,8 @@ class Mapper(Node):
     def inference_task(self):
 
         while rclpy.ok():
-
+            # start = time.time() #timer to measure the latency of this function
+            
             # check if the camera and reconstruction are initialized
             if self.camera is None or self.reconstruction is None:
                 continue
@@ -176,7 +192,7 @@ class Mapper(Node):
             
             # detect cones using the detector
             cones: List[bbox_t] = self.detector.predict(last_color_img)
-
+            neural_return = self.get_clock().now()
             # if len(cones) == 0:
                 # self.worker_busy = False
                 # continue
@@ -189,7 +205,9 @@ class Mapper(Node):
             last_depth_img = self.camera.get_last_depth()
 
             num_failed_cones = 0
+            
 
+            start_final_stage =self.get_clock().now()
             for i, cone in enumerate(cones):
 
                 try:
@@ -226,7 +244,7 @@ class Mapper(Node):
                 marker.id = (self.frame_counter + cone.class_id + i) % MAX_MARKER_ID
                 marker.type = Marker.CYLINDER
                 marker.action = Marker.ADD
-                marker.lifetime = rclpy.duration.Duration(seconds=1).to_msg()
+                marker.lifetime = rclpy.duration.Duration(seconds=0, nanoseconds=40000000).to_msg()
                 marker.pose.position.x = pos[0]
                 marker.pose.position.y = pos[1]
                 marker.pose.position.z = pos[2]
@@ -260,6 +278,8 @@ class Mapper(Node):
                     marker.color.a = 1.0
                 cone_marker_array.markers.append(marker)
 
+            end_for = self.get_clock().now()
+            
             # publish the cone array
             self.cone_pub.publish(cone_array)
 
@@ -275,12 +295,20 @@ class Mapper(Node):
 
             # publish the new cone markers
             self.cone_markers_pub.publish(cone_marker_array)
-
             # update the frame counter
             self.frame_counter += 1
 
             # mark the worker as free
             self.worker_busy = False
+
+            # end = time.time() #final part of latency measure
+            # total_time = (end-start)*1000
+
+            # self.latencies.append(total_time)
+            # if len(self.latencies) == 500:  # Ensure we have exactly 500 samples
+            #     avg_latency = sum(self.latencies) / len(self.latencies)
+                # self.get_logger().warning(f"Average inference latency (last 500): {avg_latency} ms")
+
 
 def main(args=None):
     rclpy.init(args=args)

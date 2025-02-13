@@ -84,5 +84,6 @@
         "iostream": "cpp",
         "mutex": "cpp",
         "typeindex": "cpp"
-    }
+    },
+    "python.pythonPath": "/usr/bin/python3.9"
 }
