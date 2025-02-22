@@ -15,7 +15,7 @@ struct bbox_t {
 struct bbox_comparator {
     // sort in descending order
     bool operator()(const bbox_t &a, const bbox_t &b) const {
-        return a.score < b.score;
+        return a.score > b.score;
     }
 };
 

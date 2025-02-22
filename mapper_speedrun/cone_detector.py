@@ -60,6 +60,8 @@ class ConeDetector:
 
     def predict(self, image) -> List[bbox_t]:
 
+        yolov8 = True
+
         prep_start = time.time()
         # convert image from bgr to rgb
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -75,7 +77,10 @@ class ConeDetector:
 
         # add the batch size channel
         img_tensor = img_tensor[None]
-        img_tensor = img_tensor.astype(np.float32)
+        if yolov8:
+            img_tensor = img_tensor.astype(np.float32) / 255.0
+        else:
+            img_tensor = img_tensor.astype(np.float32)
         prep_end = time.time()
         print(f"Pre-proc. time: {prep_end - prep_start}s {1.0 / (prep_end - prep_start)} Hz")
 
@@ -88,13 +93,36 @@ class ConeDetector:
         except Exception as e:
             print(f"Inference failed: {e}")
 
-        # get the boxes and probs
-        probs = output[0]
-        boxes = output[1]
+        if yolov8:
+            # get the boxes and probs
+            output = output[0]
+            probs =  output[:, 4:, :].transpose((0, 2, 1)) 
+            boxes = output[:, :4, :].transpose((0, 2, 1)) 
+            boxes_corner = []
+            for i in range(boxes.shape[1]):
+                x_center = boxes[0, i, 0]
+                y_center = boxes[0, i, 1]
+                w_box = boxes[0, i, 2]
+                h_box = boxes[0, i, 3]
+
+                x_min = (x_center - w_box / 2)
+                y_min = (y_center - h_box / 2)
+                x_max = (x_center + w_box / 2)
+                y_max = (y_center + h_box / 2)
+                
+                boxes_corner.append([x_min, y_min, x_max, y_max])
+            #add batch dimension
+            boxes_corner = np.array(boxes_corner)[None]
+            boxes_corner = boxes_corner.astype(np.float32)
+
+        else: #DAMO
+            # get the boxes and probs
+            probs = output[0]
+            boxes_corner = output[1]
 
         # filter with nms-iou
         nms_start = time.time()
-        bboxes = nms_iou(boxes, probs, boxes.shape[1], probs.shape[2], self.iou_thres, self.confidence_thres)
+        bboxes = nms_iou(boxes_corner, probs, boxes_corner.shape[1], probs.shape[2],self.iou_thres,self.confidence_thres)
         nms_end = time.time()
         print(f"NMS time: {nms_end-nms_start}s {1 / (nms_end - nms_start)} Hz")
 
