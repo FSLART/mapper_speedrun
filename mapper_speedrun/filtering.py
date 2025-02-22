@@ -31,11 +31,11 @@ core.nms.argtypes = [
 def nms_iou(boxes: List[float], scores: List[float], num_boxes: int, num_classes: int, iou_threshold: float, score_threshold: float) -> List[bbox_t]:
 
     # create the boxes pointer
-    boxes = np.array(boxes, dtype=np.float32)
+    boxes = np.ascontiguousarray(boxes, dtype=np.float32)
     boxes_ptr = boxes.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
     # create the scores pointer
-    scores = np.array(scores, dtype=np.float32)
+    scores = np.ascontiguousarray(scores, dtype=np.float32)
     scores_ptr = scores.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
     # create the keep array

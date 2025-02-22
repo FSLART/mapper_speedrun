@@ -60,6 +60,8 @@ class ConeDetector:
 
     def predict(self, image) -> List[bbox_t]:
 
+        yolov8 = True
+
         # convert image from bgr to rgb
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -74,7 +76,10 @@ class ConeDetector:
 
         # add the batch size channel
         img_tensor = img_tensor[None]
-        img_tensor = img_tensor.astype(np.float32)
+        if yolov8:
+            img_tensor = img_tensor.astype(np.float32) / 255.0
+        else:
+            img_tensor = img_tensor.astype(np.float32)
 
         # run inference
         try:
@@ -85,63 +90,43 @@ class ConeDetector:
         except Exception as e:
             print(f"Inference failed: {e}")
 
-        # get the boxes and probs
-        '''probs = output[0]
-        boxes = output[1]'''
-        # Split output[0] into bounding boxes and class probabilities
-        probs_and_boxes = output[0]  # Shape: (1, 84, 8400)
+        if yolov8:
+            # get the boxes and probs
+            output = output[0]
+            probs =  output[:, 4:, :].transpose((0, 2, 1)) 
+            boxes = output[:, :4, :].transpose((0, 2, 1)) 
+            boxes_corner = []
 
-        # Extract bounding boxes (first 4 values)
-        boxes = probs_and_boxes[:, :4, :]  # Shape: (1, 4, 8400)
+            # changed the boxes.shape[2] to boxes.shape[1]
+            for i in range(boxes.shape[1]):
+                x_center = boxes[0, i, 0]
+                y_center = boxes[0, i, 1]
+                w_box = boxes[0, i, 2]
+                h_box = boxes[0, i, 3]
 
-        # Convert bounding boxes to [x_min, y_min, x_max, y_max] format
-        converted_boxes = []
-        image_width = 640  # Width of the image
-        image_height = 640  # Height of the image
-        image_center_x = image_width / 2
-        image_center_y = image_height / 2
+                x_min = (x_center - w_box / 2)
+                y_min = (y_center - h_box / 2)
+                x_max = (x_center + w_box / 2)
+                y_max = (y_center + h_box / 2)
 
-        for i in range(boxes.shape[2]):  # Iterate over all predictions
-            x_center, y_center, width, height = boxes[0, :, i]
-            
-            # Adjust x_center and y_center to be relative to the image center
-            x_center = x_center - image_center_x
-            y_center = y_center - image_center_y
-            
-            # Convert center-based coordinates to corner-based coordinates
-            x_min = x_center - (width / 2)
-            y_min = y_center - (height / 2)
-            x_max = x_center + (width / 2)
-            y_max = y_center + (height / 2)
+                boxes_corner.append([x_min, y_min, x_max, y_max])
+            #add batch dimension
+            boxes_corner = np.array(boxes_corner)[None]
+            boxes_corner = boxes_corner.astype(np.float32)
 
-            # Scale coordinates to pixel values if neededprint(probs[0, :, i])
-            #x_min *= self.infer_size
-            #y_min *= self.infer_size
-            #x_max *= self.infer_size
-            #y_max *= self.infer_size
+        else:
+            # get the boxes and probs
+            probs = output[0]
+            boxes_corner = output[1]
 
-
-            converted_boxes.append([x_min, y_min, x_max, y_max])
-
-        # Convert to numpy array for further processing
-        converted_boxes = np.array(converted_boxes)  # Shape: (8400, 4)
-        print("Converted boxes shape")
-
-        # Extract class probabilities (remaining 80 values)
-        probs = probs_and_boxes[:, 4:, :]  # Shape: (1, 80, 8400)
-        for i in range(probs.shape[2]):
-            if probs[0, 1, i] > 0.65:
-                print(converted_boxes[i])
-
-        boxes = boxes.transpose((0, 2, 1))
-        probs = probs.transpose((0, 2, 1))
         # filter with nms-iou
         nms_start = time.time()
-        bboxes = nms_iou(boxes, probs, boxes.shape[1], probs.shape[2], self.iou_thres, self.confidence_thres)
+        bboxes = nms_iou(boxes_corner, probs, boxes_corner.shape[1], probs.shape[2],self.iou_thres,self.confidence_thres)
         nms_end = time.time()
-        print(f"NMS sfdsfftime: {nms_end-nms_start}s")
+        print(f"NMS time: {nms_end-nms_start}s")
 
         # convert the bboxes to the original size and remove the ones outside
-        bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]
+        #bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]
+        bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.original_size[0] and bbox.y + (bbox.h / 2) <= self.original_size[1]]
 
         return bboxes
