@@ -18,8 +18,8 @@ from threading import Thread, Condition
 import os
 
 #for latency measure
-# from collections import deque
-# import time
+from collections import deque
+import time
 
 MAX_MARKER_ID = 1000000000
 
@@ -43,7 +43,7 @@ class Mapper(Node):
         # self.extrinsic = np.eye(4)
 
         # create the parameters
-        self.declare_parameter('model_path', 'src/mapper_speedrun/model/damo_yolo.onnx')
+        self.declare_parameter('model_path', '/home/lart-gerson/Documents/repos/ros2_ws/src/mapper_speedrun/model/yolo_v8.onnx')
         self.declare_parameter('rgb_topic', '/zed/image_raw')
         self.declare_parameter('depth_topic', '/zed/depth/image_raw')
         self.declare_parameter('info_topic', '/zed/depth/camera_info')
@@ -62,7 +62,7 @@ class Mapper(Node):
 
         # create the cone detector
         model_path = self.get_parameter('model_path').get_parameter_value().string_value
-        self.detector = ConeDetector(model_path=model_path, confidence_thres=0.5)
+        self.detector = ConeDetector(model_path=model_path, confidence_thres=0.75)
 
         # the camera will only be created when the camera_info topic is received and the transform
         self.camera = None
@@ -103,7 +103,7 @@ class Mapper(Node):
         self.marker_ids = []
 
         #for latency measures only
-        #self.latencies= deque(maxlen=500)
+        # self.latencies= deque(maxlen=75)
 
         # counter of frames
         self.frame_counter = 0
@@ -178,7 +178,7 @@ class Mapper(Node):
     def inference_task(self):
 
         while rclpy.ok():
-            # start = time.time() #timer to measure the latency of this function
+            start = time.time() #timer to measure the latency of this function
             
             # check if the camera and reconstruction are initialized
             if self.camera is None or self.reconstruction is None:
@@ -244,7 +244,7 @@ class Mapper(Node):
                 marker.id = (self.frame_counter + cone.class_id + i) % MAX_MARKER_ID
                 marker.type = Marker.CYLINDER
                 marker.action = Marker.ADD
-                marker.lifetime = rclpy.duration.Duration(seconds=0, nanoseconds=40000000).to_msg()
+                marker.lifetime = rclpy.duration.Duration(seconds=1).to_msg()
                 marker.pose.position.x = pos[0]
                 marker.pose.position.y = pos[1]
                 marker.pose.position.z = pos[2]
@@ -301,13 +301,13 @@ class Mapper(Node):
             # mark the worker as free
             self.worker_busy = False
 
-            # end = time.time() #final part of latency measure
-            # total_time = (end-start)*1000
+            end = time.time() #final part of latency measure
+            total_time = (end-start)*1000
+            self.get_logger().warning(f" inference latency: {total_time} ms")
 
             # self.latencies.append(total_time)
-            # if len(self.latencies) == 500:  # Ensure we have exactly 500 samples
+            # if len(self.latencies) == 75:  # Ensure we have exactly 500 samples
             #     avg_latency = sum(self.latencies) / len(self.latencies)
-                # self.get_logger().warning(f"Average inference latency (last 500): {avg_latency} ms")
 
 
 def main(args=None):

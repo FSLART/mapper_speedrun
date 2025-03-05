@@ -76,7 +76,7 @@ class Reconstruction:
 
         # get the pixel coordinates
         x = int(bbox.x + float(bbox.w / 2))
-        y = int(bbox.y + float(bbox.h / 2))
+        y = int(bbox.y + float(bbox.h * 5 / 6))
 
         # get the depth from the last depth image received
         # indexes are inverted because Python OpenCV is row-major

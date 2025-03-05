@@ -2,6 +2,7 @@ import numpy as np
 from .types import bbox_t
 from typing import List
 import ctypes
+import cv2
 
 # C structure for the bbox_t object
 class c_bbox_t(ctypes.Structure):
@@ -13,7 +14,7 @@ class c_bbox_t(ctypes.Structure):
                 ("class_id", ctypes.c_uint8)]
     
 # import the shared library
-core = ctypes.CDLL("/usr/lib/libnms.so")
+core = ctypes.CDLL("./src/mapper_speedrun/mapper_speedrun/nms_core/build/libnms.so")
 
 # set the argument types
 core.nms.argtypes = [
@@ -48,9 +49,29 @@ def nms_iou(boxes: List[float], scores: List[float], num_boxes: int, num_classes
 
     # convert the output to bbox_t
     output = []
+    output_2 = []
     for i in range(num_keep.value):
         bbox = keep_ptr[i]
         output.append(bbox_t(bbox.x1, bbox.y1, bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, bbox.score, bbox.class_id))
+        output_2.append(bbox_t(bbox.x1, bbox.y1, bbox.x2, bbox.y2, bbox.score, bbox.class_id))
+    
+    test(output_2)
 
     return output
  
+def test(detections):
+
+    # Create a black image (height=480, width=640, 3 color channels)
+    height, width = 640, 640
+    black_image = np.zeros((height, width, 3), dtype=np.uint8)
+
+    # Draw rectangle on the black image
+    # Color is green (B, G, R) and thickness is 2 pixels
+    for bbox in detections:
+        x1, y1, x2, y2 = bbox[:4]
+        cv2.rectangle(black_image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+
+    # Save the image
+    output_path = "black_with_rectangle_2.jpg"
+    cv2.imwrite(output_path, black_image)
+    print(f"Output image saved to: {output_path}")

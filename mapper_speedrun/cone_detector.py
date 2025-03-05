@@ -8,7 +8,7 @@ from .types import bbox_t
 from .filtering import nms_iou
 
 class ConeDetector:
-    def __init__(self, model_path: str, confidence_thres: float = 0.65, iou_thres: float = 0.4, infer_size: int = 640):
+    def __init__(self, model_path: str, confidence_thres: float = 0.65, iou_thres: float = 0.1, infer_size: int = 640):
         self.confidence_thres = confidence_thres
         self.iou_thres = iou_thres
         self.infer_size = infer_size
@@ -27,7 +27,7 @@ class ConeDetector:
         ]
         """
         ort.set_default_logger_severity(3)
-        self.providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] # TODO: in Jetson, add TensorrtExecutionProvider
+        self.providers = ['TensorrtExecutionProvider','CUDAExecutionProvider', 'CPUExecutionProvider'] # TODO: in Jetson, add TensorrtExecutionProvider  'CUDAExecutionProvider', 'CPUExecutionProvider'
         self.model: InferenceSession = InferenceSession(model_path, providers=self.providers)
         print(f"Model running on {self.model.get_providers()}")
 
@@ -114,11 +114,13 @@ class ConeDetector:
             #add batch dimension
             boxes_corner = np.array(boxes_corner)[None]
             boxes_corner = boxes_corner.astype(np.float32)
+            test(probs, boxes_corner)
 
         else: #DAMO
             # get the boxes and probs
             probs = output[0]
             boxes_corner = output[1]
+    
 
         # filter with nms-iou
         nms_start = time.time()
@@ -130,3 +132,31 @@ class ConeDetector:
         bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]
 
         return bboxes
+
+def test(probs, boxes):
+    detections = []
+    for i in range(boxes.shape[1]):  # Loop through all 8400 detections
+        class_confidences = probs[0, i, :]  # Confidence scores for 5 classes
+        max_confidence = np.max(class_confidences)  # Highest confidence value
+        class_id = np.argmax(class_confidences)  # Class with highest confidence
+        
+        if max_confidence > 0.7:
+            # Extract bounding box
+            x_min, y_min, x_max, y_max = boxes[0, i, :]
+
+            detections.append((x_min, y_min, x_max, y_max, max_confidence, class_id))
+
+    # Create a black image (height=480, width=640, 3 color channels)
+    height, width = 640, 640
+    black_image = np.zeros((height, width, 3), dtype=np.uint8)
+
+    # Draw rectangle on the black image
+    # Color is green (B, G, R) and thickness is 2 pixels
+    for bbox in detections:
+        x1, y1, x2, y2 = bbox[:4]
+        cv2.rectangle(black_image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+
+    # Save the image
+    output_path = "black_with_rectangle.jpg"
+    cv2.imwrite(output_path, black_image)
+    print(f"Output image saved to: {output_path}")
