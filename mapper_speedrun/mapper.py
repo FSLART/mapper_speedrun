@@ -43,7 +43,7 @@ class Mapper(Node):
         # self.extrinsic = np.eye(4)
 
         # create the parameters
-        self.declare_parameter('model_path', '/home/lart-gerson/Documents/repos/ros2_ws/src/mapper_speedrun/model/yolo_v8.onnx')
+        self.declare_parameter('model_path', '/home/lart-gerson/Documents/repos/ros2_ws/src/mapper_speedrun/model/yolo_v11_n.onnx')
         self.declare_parameter('rgb_topic', '/zed/image_raw')
         self.declare_parameter('depth_topic', '/zed/depth/image_raw')
         self.declare_parameter('info_topic', '/zed/depth/camera_info')
@@ -189,10 +189,12 @@ class Mapper(Node):
 
             # get the last color image
             last_color_img = self.camera.get_last_color()
-            
+
+            neural_start = time.time()
             # detect cones using the detector
-            cones: List[bbox_t] = self.detector.predict(last_color_img)
-            neural_return = self.get_clock().now()
+            cones, inference_total = self.detector.predict(last_color_img)
+            neural_return = time.time()
+        
             # if len(cones) == 0:
                 # self.worker_busy = False
                 # continue
@@ -302,9 +304,9 @@ class Mapper(Node):
             self.worker_busy = False
 
             end = time.time() #final part of latency measure
-            total_time = (end-start)*1000
-            self.get_logger().warning(f" inference latency: {total_time} ms")
-
+            total_time = (neural_return-neural_start)
+            self.get_logger().warning(f" inference latency: {inference_total} s")
+            self.get_logger().warning(f" else latency: {total_time- inference_total} s")
             # self.latencies.append(total_time)
             # if len(self.latencies) == 75:  # Ensure we have exactly 500 samples
             #     avg_latency = sum(self.latencies) / len(self.latencies)

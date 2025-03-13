@@ -27,7 +27,7 @@ class ConeDetector:
         ]
         """
         ort.set_default_logger_severity(3)
-        self.providers = ['TensorrtExecutionProvider','CUDAExecutionProvider', 'CPUExecutionProvider'] # TODO: in Jetson, add TensorrtExecutionProvider  'CUDAExecutionProvider', 'CPUExecutionProvider'
+        self.providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] # TODO: in Jetson, add TensorrtExecutionProvider  'CUDAExecutionProvider', 'CPUExecutionProvider'
         self.model: InferenceSession = InferenceSession(model_path, providers=self.providers)
         print(f"Model running on {self.model.get_providers()}")
 
@@ -71,7 +71,7 @@ class ConeDetector:
 
         # resize image to 640x640
         image = cv2.resize(image, (self.infer_size, self.infer_size), interpolation=cv2.INTER_LINEAR)
-
+        
         # transpose the image channels
         img_tensor = image.transpose((2, 0, 1))
 
@@ -93,28 +93,21 @@ class ConeDetector:
         except Exception as e:
             print(f"Inference failed: {e}")
 
-        if yolov8:
-            # get the boxes and probs
+        if yolov8:  # Get the boxes and probabilities
             output = output[0]
-            probs =  output[:, 4:, :].transpose((0, 2, 1)) 
-            boxes = output[:, :4, :].transpose((0, 2, 1)) 
-            boxes_corner = []
-            for i in range(boxes.shape[1]):
-                x_center = boxes[0, i, 0]
-                y_center = boxes[0, i, 1]
-                w_box = boxes[0, i, 2]
-                h_box = boxes[0, i, 3]
+            probs = output[:, 4:, :].transpose((0, 2, 1))
+            boxes = output[:, :4, :].transpose((0, 2, 1))
 
-                x_min = (x_center - w_box / 2)
-                y_min = (y_center - h_box / 2)
-                x_max = (x_center + w_box / 2)
-                y_max = (y_center + h_box / 2)
-                
-                boxes_corner.append([x_min, y_min, x_max, y_max])
-            #add batch dimension
-            boxes_corner = np.array(boxes_corner)[None]
-            boxes_corner = boxes_corner.astype(np.float32)
-            test(probs, boxes_corner)
+            # Vectorized computation for corners
+            x_center, y_center, w_box, h_box = boxes[0,:, 0], boxes[0,:, 1], boxes[0,:, 2], boxes[0,:, 3]
+            x_min = x_center - w_box / 2
+            y_min = y_center - h_box / 2
+            x_max = x_center + w_box / 2
+            y_max = y_center + h_box / 2
+
+            boxes_corner = np.stack((x_min, y_min, x_max, y_max), axis=-1)[None].astype(np.float32)
+            #test(probs, boxes_corner)
+            end_for = time.time()
 
         else: #DAMO
             # get the boxes and probs
@@ -131,7 +124,7 @@ class ConeDetector:
         # convert the bboxes to the original size and remove the ones outside
         bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]
 
-        return bboxes
+        return bboxes, end_for - inference_end
 
 def test(probs, boxes):
     detections = []
