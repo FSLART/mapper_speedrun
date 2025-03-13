@@ -190,10 +190,12 @@ class Mapper(Node):
             # get the last color image
             last_color_img = self.camera.get_last_color()
 
-            neural_start = time.time()
+            # neural_start = time.time()
+            
             # detect cones using the detector
-            cones, inference_total = self.detector.predict(last_color_img)
-            neural_return = time.time()
+            cones: List[bbox_t] = self.detector.predict(last_color_img)
+            
+            # neural_return = time.time()
         
             # if len(cones) == 0:
                 # self.worker_busy = False
@@ -208,8 +210,6 @@ class Mapper(Node):
 
             num_failed_cones = 0
             
-
-            start_final_stage =self.get_clock().now()
             for i, cone in enumerate(cones):
 
                 try:
@@ -280,7 +280,7 @@ class Mapper(Node):
                     marker.color.a = 1.0
                 cone_marker_array.markers.append(marker)
 
-            end_for = self.get_clock().now()
+            #end_for = self.get_clock().now()
             
             # publish the cone array
             self.cone_pub.publish(cone_array)
@@ -304,9 +304,9 @@ class Mapper(Node):
             self.worker_busy = False
 
             end = time.time() #final part of latency measure
-            total_time = (neural_return-neural_start)
-            self.get_logger().warning(f" inference latency: {inference_total} s")
-            self.get_logger().warning(f" else latency: {total_time- inference_total} s")
+            total_time = (end-start)
+            self.get_logger().warning(f" total time: {total_time} s")
+            #self.get_logger().warning(f" else latency: {total_time- inference_total} s")
             # self.latencies.append(total_time)
             # if len(self.latencies) == 75:  # Ensure we have exactly 500 samples
             #     avg_latency = sum(self.latencies) / len(self.latencies)

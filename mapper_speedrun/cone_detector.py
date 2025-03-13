@@ -124,7 +124,7 @@ class ConeDetector:
         # convert the bboxes to the original size and remove the ones outside
         bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]
 
-        return bboxes, end_for - inference_end
+        return bboxes
 
 def test(probs, boxes):
     detections = []
