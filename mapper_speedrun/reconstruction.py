@@ -16,6 +16,8 @@ class Reconstruction:
             camera (Camera): The camera used for reconstruction.
         """
         self.camera = camera
+        print("Camera Intrinsic Matrix:")
+        print(self.camera.intrinsic)
 
     def deprojectPixelToPoint(self, pixel: np.ndarray) -> np.ndarray:
         """
