@@ -14,7 +14,7 @@ class c_bbox_t(ctypes.Structure):
                 ("class_id", ctypes.c_uint8)]
     
 # import the shared library
-core = ctypes.CDLL("./src/mapper_speedrun/mapper_speedrun/nms_core/build/libnms.so")
+core = ctypes.CDLL("/home/lart-tasha/Documents/repos/ros2_ws/src/mapper_speedrun/mapper_speedrun/nms_core/build/libnms.so")
 
 # set the argument types
 core.nms.argtypes = [
@@ -55,7 +55,7 @@ def nms_iou(boxes: List[float], scores: List[float], num_boxes: int, num_classes
         output.append(bbox_t(bbox.x1, bbox.y1, bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, bbox.score, bbox.class_id))
         output_2.append(bbox_t(bbox.x1, bbox.y1, bbox.x2, bbox.y2, bbox.score, bbox.class_id))
     
-    test(output_2)
+    # test(output_2)
 
     return output
  

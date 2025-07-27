@@ -8,7 +8,7 @@ from .types import bbox_t
 from .filtering import nms_iou
 
 class ConeDetector:
-    def __init__(self, model_path: str, confidence_thres: float = 0.65, iou_thres: float = 0.1, infer_size: int = 640):
+    def __init__(self, model_path: str, confidence_thres: float = 0.60, iou_thres: float = 0.5, infer_size: int = 640):
         self.confidence_thres = confidence_thres
         self.iou_thres = iou_thres
         self.infer_size = infer_size
@@ -106,7 +106,7 @@ class ConeDetector:
             y_max = y_center + h_box / 2
 
             boxes_corner = np.stack((x_min, y_min, x_max, y_max), axis=-1)[None].astype(np.float32)
-            #test(probs, boxes_corner)
+            # test(probs, boxes_corner)
             end_for = time.time()
 
         else: #DAMO
@@ -119,7 +119,7 @@ class ConeDetector:
         nms_start = time.time()
         bboxes = nms_iou(boxes_corner, probs, boxes_corner.shape[1], probs.shape[2],self.iou_thres,self.confidence_thres)
         nms_end = time.time()
-        print(f"NMS time: {nms_end-nms_start}s {1 / (nms_end - nms_start)} Hz")
+        print(f"NMS time: {nms_end-prep_start}s {1 / (nms_end - prep_start)} Hz")
 
         # convert the bboxes to the original size and remove the ones outside
         bboxes = [self.infer_pixel_to_original(bbox) for bbox in bboxes if bbox.x + (bbox.w / 2) >= 0 and bbox.y + (bbox.h / 2) >= 0 and bbox.x + (bbox.w / 2) <= self.infer_size and bbox.y + (bbox.h / 2) <= self.infer_size]

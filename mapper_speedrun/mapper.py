@@ -43,7 +43,7 @@ class Mapper(Node):
         # self.extrinsic = np.eye(4)
 
         # create the parameters
-        self.declare_parameter('model_path', '/home/lart-gerson/Documents/repos/ros2_ws/src/mapper_speedrun/model/yolo_v11_n.onnx')
+        self.declare_parameter('model_path', '/home/lart-tasha/Documents/repos/ros2_ws/src/mapper_speedrun/model/manual_yolov8n.onnx')
         self.declare_parameter('rgb_topic', '/zed/image_raw')
         self.declare_parameter('depth_topic', '/zed/depth/image_raw')
         self.declare_parameter('info_topic', '/zed/depth/camera_info')
@@ -62,7 +62,7 @@ class Mapper(Node):
 
         # create the cone detector
         model_path = self.get_parameter('model_path').get_parameter_value().string_value
-        self.detector = ConeDetector(model_path=model_path, confidence_thres=0.75)
+        self.detector = ConeDetector(model_path=model_path, confidence_thres=0.70)
 
         # the camera will only be created when the camera_info topic is received and the transform
         self.camera = None
@@ -229,7 +229,7 @@ class Mapper(Node):
                 except ValueError as e:
                     self.get_logger().error(f"Pixel to point value error: {str(e)}")
                     continue
-                
+
                 # convert to Cone message
                 cone_msg = Cone()
                 cone_msg.position.x = pos[0]
@@ -246,7 +246,7 @@ class Mapper(Node):
                 marker.id = (self.frame_counter + cone.class_id + i) % MAX_MARKER_ID
                 marker.type = Marker.CYLINDER
                 marker.action = Marker.ADD
-                marker.lifetime = rclpy.duration.Duration(seconds=1).to_msg()
+                marker.lifetime = rclpy.duration.Duration(nanoseconds=800000000).to_msg()
                 marker.pose.position.x = pos[0]
                 marker.pose.position.y = pos[1]
                 marker.pose.position.z = pos[2]
@@ -254,30 +254,39 @@ class Mapper(Node):
                 marker.scale.x = 0.23
                 marker.scale.y = 0.23
                 marker.scale.z = 0.31
-                if cone.class_id == 1:
-                    # yellow
-                    marker.color.r = 1.0
-                    marker.color.g = 1.0
-                    marker.color.b = 0.0
-                    marker.color.a = 1.0
-                elif cone.class_id == 2:
-                    # blue
-                    marker.color.r = 0.0
-                    marker.color.g = 0.0
-                    marker.color.b = 1.0
-                    marker.color.a = 1.0
-                elif cone.class_id == 3 or cone.class_id == 4:
-                    # orange
-                    marker.color.r = 1.0
-                    marker.color.g = 0.5
-                    marker.color.b = 0.0
-                    marker.color.a = 1.0
-                else:
-                    # red
-                    marker.color.r = 1.0
-                    marker.color.g = 0.0
-                    marker.color.b = 0.0
-                    marker.color.a = 1.0
+                marker.color.r = 1.0
+                
+                '''Just for testing'''
+                marker.color.g = 1.0
+                marker.color.b = 1.0
+                marker.color.a = 1.0
+
+                # if cone.class_id == 1:
+                #     # yellow
+                #     marker.color.r = 1.0
+                #     marker.color.g = 1.0
+                #     marker.color.b = 0.0
+                #     marker.color.a = 1.0
+                # elif cone.class_id == 2:
+                #     # blue
+                #     marker.color.r = 0.0
+                #     marker.color.g = 0.0
+                #     marker.color.b = 1.0
+                #     marker.color.a = 1.0
+                # elif cone.class_id == 3 or cone.class_id == 4:
+                #     # orange
+                #     marker.color.r = 1.0
+                #     marker.color.g = 0.5
+                #     marker.color.b = 0.0
+                #     marker.color.a = 1.0
+                # else:
+                #     # red
+                #     marker.color.r = 1.0
+                #     marker.color.g = 0.0
+                #     marker.color.b = 0.0
+                #     marker.color.a = 1.0
+
+
                 cone_marker_array.markers.append(marker)
 
             #end_for = self.get_clock().now()
